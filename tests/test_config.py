@@ -1,6 +1,8 @@
 from pathlib import Path
 
+import pytest
 import yaml
+from pydantic import ValidationError
 
 from tv_extrapolation.config import DatasetConfig
 
@@ -83,3 +85,86 @@ def test_amplitude_dataset_omits_masking_when_unset(tmp_path):
         "uncertainty_column": "SIGF",
     }
     assert "masking" not in payload
+
+
+def test_dataset_config_missing_required_name_raises_validation_error(tmp_path):
+    path = _write_yaml(
+        tmp_path,
+        {
+            "dark_mtz": "a.mtz",
+            "triggered_mtz": "b.mtz",
+            "pdb_dark": "c.pdb",
+            "resolution_limit": 2.0,
+            "columns": {
+                "dark": {"kind": "amplitude", "amplitude_or_intensity": "F", "sigma": "SIGF"},
+                "triggered": {"kind": "amplitude", "amplitude_or_intensity": "F", "sigma": "SIGF"},
+            },
+            "output_dir": "results/demo",
+        },
+    )
+
+    with pytest.raises(ValidationError):
+        DatasetConfig.from_yaml(path)
+
+
+def test_mixed_column_kinds_follow_dark_kind_for_translated_column_paths(tmp_path):
+    config = DatasetConfig.from_yaml(
+        _write_yaml(
+            tmp_path,
+            {
+                "name": "mixed",
+                "dark_mtz": "a.mtz",
+                "triggered_mtz": "b.mtz",
+                "pdb_dark": "c.pdb",
+                "resolution_limit": 2.0,
+                "columns": {
+                    "dark": {"kind": "amplitude", "amplitude_or_intensity": "F_DARK", "sigma": "SIGF_DARK"},
+                    "triggered": {
+                        "kind": "intensity",
+                        "amplitude_or_intensity": "I_TRIG",
+                        "sigma": "SIGI_TRIG",
+                    },
+                },
+                "output_dir": "results/mixed",
+            },
+        )
+    )
+
+    payload = config.to_xtr_estimator_settings_dict()
+
+    assert payload["input_files"]["columns_are_ints"] is False
+    assert payload["input_files"]["columns_dark"] == {
+        "amplitude_column": "F_DARK",
+        "phase_column": "MODEL",
+        "uncertainty_column": "SIGF_DARK",
+    }
+    assert payload["input_files"]["columns_triggered"] == {
+        "amplitude_column": "I_TRIG",
+        "phase_column": "MODEL",
+        "uncertainty_column": "SIGI_TRIG",
+    }
+    assert "columns_dark_ints" not in payload["input_files"]
+    assert "columns_triggered_ints" not in payload["input_files"]
+
+
+def test_dataset_config_omitted_estimation_and_masking_default_to_empty_dicts(tmp_path):
+    config = DatasetConfig.from_yaml(
+        _write_yaml(
+            tmp_path,
+            {
+                "name": "demo",
+                "dark_mtz": "a.mtz",
+                "triggered_mtz": "b.mtz",
+                "pdb_dark": "c.pdb",
+                "resolution_limit": 2.0,
+                "columns": {
+                    "dark": {"kind": "amplitude", "amplitude_or_intensity": "F", "sigma": "SIGF"},
+                    "triggered": {"kind": "amplitude", "amplitude_or_intensity": "F", "sigma": "SIGF"},
+                },
+                "output_dir": "results/demo",
+            },
+        )
+    )
+
+    assert config.estimation == {}
+    assert config.masking == {}
