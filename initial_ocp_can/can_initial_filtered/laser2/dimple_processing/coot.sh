@@ -1,0 +1,1 @@
+/sw/pkg/presto/e/14.1/software/CCP4/9.0.011-foss-2023a-SHELX-ARP-8.0/ccp4-9/bin/coot --no-guano /gpfs/offline1/visitors/micromax/20251850/20260513/dzabelsk/TR_CAN_filt/laser2/dimple_processing/final.mtz /gpfs/offline1/visitors/micromax/20251850/20260513/dzabelsk/TR_CAN_filt/laser2/dimple_processing/final.pdb

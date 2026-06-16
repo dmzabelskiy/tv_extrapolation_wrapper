@@ -1,0 +1,1272 @@
+<!--SUMMARY_BEGIN-->
+ 
+ ###############################################################
+ ###############################################################
+ ###############################################################
+ ### CCP4 9.0.011: Refmac          version 5.8.0431 : 04/08/25##
+ ###############################################################
+ User: dzabelsk  Run date: 29/ 5/2026 Run time: 12:38:15 
+
+
+ Please reference: Collaborative Computational Project, Number 4. 2011.
+ "Overview of the CCP4 suite and current developments". Acta Cryst. D67, 235-242.
+ as well as any specific reference in the program write-up.
+
+<!--SUMMARY_END-->
+ $TEXT:Reference1: $$ Primary reference $$ 
+   "Overview of refinement procedures within REFMAC5: utilizing data from different sources"
+   O.Kovalevskiy, R.A.Nicholls, F.Long, G.N.Murshudov,(2018) 
+   Acta Crystallogr. D74, 492-505
+
+ $$
+ $SUMMARY :Reference1:  $$ Refmac: $$
+ :TEXT:Reference1: $$
+
+ $TEXT:Reference1: $$ Primary reference for EM $$ 
+   "Current approaches for the fitting and refinement of atomic models into cryo-EM maps using CCP-EM
+   R.A. Nicholls, M. Tykac, O.Kovalevskiy, G.N.Murshudov,(2018) 
+   Acta Crystallogr. D74, 215-227
+
+ $$
+ $SUMMARY :Reference2:  $$ Refmac: $$
+ :TEXT:Reference1: $$
+
+ $TEXT:Reference1: $$ Secondary reference $$ 
+   "REFMAC5 for the refinement of macromolecular crystal structures:"
+   G.N.Murshudov, P.Skubak, A.A.Lebedev, N.S.Pannu, R.A.Steiner, R.A.Nicholls, M.D.Winn, F.Long and A.A.Vagin,(2011) 
+   Acta Crystallogr. D67, 355-367
+
+ $$
+ $SUMMARY :Reference3:  $$ Refmac: $$
+ :TEXT:Reference1: $$
+
+ $TEXT:Reference2: $$ Secondary reference $$ 
+   "Refinement of Macromolecular Structures by the  Maximum-Likelihood Method:"
+   G.N. Murshudov, A.A.Vagin and E.J.Dodson,(1997)
+   Acta Crystallogr. D53, 240-255
+   EU  Validation contract: BIO2CT-92-0524
+
+ $$
+ $SUMMARY :Reference4:  $$ Refmac: $$
+ :TEXT:Reference2: $$
+
+  Data line--- labin FP=F SIGFP=SIGF
+  Data line--- refinement type rigidbody resolution 15 3.5
+  Data line--- rigidbody ncycle 10
+  Data line--- END
+
+ OPENED INPUT MTZ FILE 
+ Logical Name: HKLIN   Filename: amplit.mtz 
+
+
+    ****                     Input and Default parameters#                      ****
+
+
+Input coordinate file.  Logical name - XYZIN actual file name  - ini.pdb
+Output coordinate file. Logical name - XYZOUT actual file name - refmacRB.pdb
+Input reflection file.  Logical name - HKLIN actual file name  - amplit.mtz
+Output reflection file. Logical name - HKLOUT actual file name - refmacRB.mtz
+
+Cell from mtz :    83.430    83.430    90.210    90.000    90.000   120.000
+Space group from mtz: number -  154; name - P 32 2 1
+
+  Refinement type                        : Rigid Body
+
+    ****                           Domain Definition                            ****
+
+  No domains have been defined. All atoms will be refined as one rigid body
+  Residual                               : Rice Maximum Likelihood for Fs
+
+    ****                    Least-square scaling parameters                     ****
+
+Overall scale
+Overall B value
+Overall anisotropic B with tr(B) = 0.0
+Constant bulk solvent in non protein region
+Probe radii for non-ions     1.200
+Probe radii for ions         0.800
+Shrinkage of the mask  by    0.800
+
+
+    ****                 Map sharpening parameters and methods                  ****
+
+No map sharpening will be performed
+
+  Experimental sigmas used for weighting
+  Number of Bins and width:    20       0.0041
+  Scaling type                           :
+          Wilson scaling type with Guassians
+
+  Estimation of D/Sigma in resolution bins
+  using  working set of reflns with experimental sigmas
+  using  working set of reflns with experimental sigmas
+
+  Scaling and SigmaA resln:    15.0004  3.5000
+
+
+Monitoring style is "MEDIUM". Complete information will be printed out in the
+first and last cycle. In all other cycles minimum information will be printed out
+Sigma cutoffs for printing out outliers
+If deviation of restraint parameter > alpha*sigma then information will be printed out
+Distance outliers      10.000
+Angle outliers         10.000
+Torsion outliers       10.000
+Chiral volume outliers 10.000
+Plane outliers         10.000
+Non-bonding outliers   10.000
+B value  outliers      10.000
+---------------------------------------------------------------
+
+ Input file :ini.pdb
+  set_mod
+
+ Scattering factors file : /sw/pkg/presto/e/14.1/software/CCP4/9.0.011-foss-2023a-SHELX-ARP-8.0/ccp4-9/lib/data/atomsf.lib
+
+
+_ccp4_form_factor.scat_method    'Sum of Gaussians'
+_ccp4_form_factor.scat_data_source  X-ray
+
+
+ loop_
+     _atom_type_symbol
+     _atom_type_scat_Cromer_Mann_a1
+     _atom_type_scat_Cromer_Mann_b1
+     _atom_type_scat_Cromer_Mann_a2
+     _atom_type_scat_Cromer_Mann_b2
+     _atom_type_scat_Cromer_Mann_a3
+     _atom_type_scat_Cromer_Mann_b3
+     _atom_type_scat_Cromer_Mann_a4
+     _atom_type_scat_Cromer_Mann_b4
+     _atom_type_scat_Cromer_Mann_c
+
+
+  N     12.2220   0.0057   3.1346   9.8933   2.0141  28.9975   1.1672   0.5826 -11.5379
+  C      2.3103  20.8439   1.0201  10.2075   1.5888   0.5687   0.8651  51.6512   0.2156
+  O      3.0487  13.2771   2.2870   5.7011   1.5464   0.3239   0.8671  32.9089   0.2508
+  S      6.9054   1.4679   5.2035  22.2151   1.4379   0.2536   1.5863  56.1720   0.8669
+  CL    11.4601   0.0104   7.1962   1.1662   6.2554  18.5194   1.6455  47.7784  -9.5571
+
+
+
+    ****                           Info from mtz file                           ****
+
+FreeR flag                         -999
+Number of "free" reflections          0
+Number of   all  reflections       4755
+ Warning ==>The number of free reflections with flag         -999  is zero
+ Warning ==> Switching off use of free R
+--------------------------------------------------------------------------------
+ Number of reflections in file      48310
+ Number of reflections read           4755
+
+   Current auto weighting coefficient =    11.2506485    
+
+
+     Rigid body cycle =      1
+
+
+-----------------------------------------------------------------------------
+Overall scale should be multiplied by       1.0000
+Overall               : scale =     0.7674, B  =   -7.2180
+Partial structure    1: scale =     0.3222, B  =   48.6842
+Overall anisotropic scale factors
+   B11 =  -0.43 B22 =  -0.43 B33 =   1.40 B12 =  -0.22 B13 =  -0.00 B23 =   0.00
+-----------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------
+
+    ****                Things for loggraph, R factor and others                ****
+
+
+$TABLE: Cycle    1. Rfactor analysis, F distribution v resln  :
+$GRAPHS:Cycle    1. M(Rfactor) v. resln :N:1,6,7:
+:Cycle    1. M(Fobs) and M(Fc) v. resln :N:1,4,5:
+:Cycle    1. % observed v. resln :N:1,3:
+$$
+M(4SSQ/LL) NR_used %_obs M(Fo_used) M(Fc_used) Rf_used WR_used $$
+$$
+ 0.006     107 100.00   599.0   565.9  0.26  0.28
+ 0.010     128 100.00   636.6   657.9  0.20  0.20
+ 0.014     157 100.00   597.4   576.0  0.17  0.18
+ 0.018     164 100.00   467.5   445.0  0.20  0.23
+ 0.022     176 100.00   383.3   353.9  0.22  0.24
+ 0.026     197 100.00   402.5   384.7  0.21  0.25
+ 0.030     212 100.00   382.3   362.0  0.22  0.26
+ 0.033     214 100.00   399.4   362.5  0.19  0.22
+ 0.037     242 100.00   431.9   409.3  0.20  0.23
+ 0.041     242 100.00   494.8   465.9  0.16  0.19
+ 0.045     245 100.00   519.5   489.8  0.17  0.20
+ 0.049     273 100.00   530.4   502.6  0.16  0.18
+ 0.053     269 100.00   497.4   474.3  0.17  0.20
+ 0.057     276 100.00   453.8   432.6  0.17  0.21
+ 0.060     303 100.00   396.5   387.6  0.19  0.23
+ 0.064     291 100.00   402.6   386.0  0.19  0.23
+ 0.068     302 100.00   372.0   357.6  0.19  0.22
+ 0.072     321 100.00   352.3   356.4  0.19  0.23
+ 0.076     329 100.00   358.4   356.0  0.18  0.22
+ 0.080     307 100.00   333.1   337.3  0.18  0.21
+$$
+
+    ****                      Fom and SigmaA vs resolution                      ****
+
+ $TABLE: Cycle    1. FSC and  Fom(<cos(DelPhi)>-acentric, centric, overall v resln:
+ $GRAPHS:Cycle    1. M(Fom) v. resln :N:1,3,5,7,8,9,10:
+ $$
+ <4SSQ/LL> NREFa  FOMa  NREFc FOMc NREFall FOMall  SigmaA_Fc1 FSCwork CorrFofcWork$$
+ $$
+  0.0064     67   0.876     40   0.861    107   0.870  0.876  0.9534  0.8509
+  0.0102     94   0.910     34   0.823    128   0.887  0.843  0.9770  0.9163
+  0.0141    113   0.922     44   0.887    157   0.912  0.893  0.9795  0.9180
+  0.0180    126   0.912     38   0.793    164   0.885  0.932  0.9729  0.9023
+  0.0218    139   0.876     37   0.693    176   0.837  0.934  0.9659  0.8841
+  0.0257    162   0.905     35   0.805    197   0.887  1.046  0.9702  0.8650
+  0.0295    169   0.897     43   0.807    212   0.879  1.044  0.9662  0.8668
+  0.0334    179   0.889     35   0.792    214   0.873  0.979  0.9762  0.8951
+  0.0372    201   0.878     41   0.805    242   0.866  1.085  0.9667  0.8940
+  0.0411    205   0.896     37   0.843    242   0.888  1.113  0.9740  0.9336
+  0.0450    204   0.920     41   0.866    245   0.911  1.026  0.9802  0.9202
+  0.0488    234   0.928     39   0.958    273   0.933  1.004  0.9839  0.9285
+  0.0527    234   0.919     35   0.882    269   0.914  0.981  0.9803  0.9115
+  0.0565    233   0.927     43   0.812    276   0.909  0.986  0.9792  0.9031
+  0.0604    264   0.911     39   0.845    303   0.902  0.994  0.9777  0.8984
+  0.0643    253   0.909     38   0.837    291   0.899  0.967  0.9726  0.8892
+  0.0681    259   0.910     43   0.817    302   0.897  1.004  0.9771  0.8992
+  0.0720    280   0.922     41   0.764    321   0.902  0.953  0.9756  0.8957
+  0.0758    286   0.898     43   0.807    329   0.886  0.891  0.9791  0.9057
+  0.0797    275   0.877     32   0.754    307   0.864  0.842  0.9801  0.9157
+ $$
+Resolution limits                    =     15.000     3.500
+Number of used reflections           =       4755
+Percentage observed                  =    98.4065
+Percentage of free reflections       =     0.0000
+Overall R factor                     =     0.1863
+Average Fourier shell correlation    =     0.9754
+Overall weighted R factor            =     0.2195
+Overall weighted R2 factor           =     0.2846
+Average correlation coefficient      =     0.9015
+Overall correlation coefficient      =     0.9078
+Cruickshanks DPI for coordinate error=     0.4967
+Overall figure of merit              =     0.8920
+ML based su of positional parameters =     0.3472
+ML based su of thermal parameters    =    21.7273
+-----------------------------------------------------------------------------
+----------------------------------------------------------
+  Rigid body parameters will be applied to coordinates
+  as following
+
+ Xnew = Rot*Xold - Rot*Tg + Tg +deltaTg
+Where
+ Xnew and Xold are new and old coordinates of atoms in
+              this domain
+ Rot           is rotation matrix derived from Euler angles
+ Tg            is centre of mass of this domain
+ deltaTg       is shift of centre of mass
+----------------------------------------------------------
+Domain     1
+Centre of mass:    -22.116     7.723     0.887
+ Euler angles and deltaTg:       179.99     0.20   179.99    -0.01    -0.01     0.01
+
+ Matrix and deltaTg
+        1.000     0.000    -0.003
+       -0.000     1.000     0.000
+        0.003     0.000     1.000
+       -0.006    -0.009     0.011
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:     45.00   179.90    -0.02    -0.01    -0.01     0.01
+
+Domain     2
+Centre of mass:    -21.969     5.006     0.389
+ Euler angles and deltaTg:      -179.98     0.05  -179.98     0.01     0.01     0.01
+
+ Matrix and deltaTg
+        1.000    -0.001    -0.001
+        0.001     1.000    -0.000
+        0.001    -0.000     1.000
+        0.006     0.009     0.012
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -45.00   179.97     0.03     0.01     0.01     0.01
+
+Domain     3
+Centre of mass:    -22.291    11.530    -3.161
+ Euler angles and deltaTg:         0.00     0.00     0.00     0.02    -0.03     0.10
+
+ Matrix and deltaTg
+        1.000    -0.000     0.000
+        0.000     1.000     0.000
+       -0.000     0.000     1.000
+        0.019    -0.033     0.099
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:      0.00     0.00     0.00     0.02    -0.03     0.10
+
+Domain     4
+Centre of mass:    -24.707    18.856    -4.348
+ Euler angles and deltaTg:      -176.74     2.83  -176.74     0.06     0.04     0.00
+
+ Matrix and deltaTg
+        0.992    -0.114    -0.049
+        0.114     0.994    -0.003
+        0.049    -0.003     0.999
+        0.057     0.042     0.000
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -90.00    23.49     7.11     0.06     0.04     0.00
+
+
+     Rigid body cycle =      2
+
+
+-----------------------------------------------------------------------------
+Overall scale should be multiplied by       1.0000
+Overall               : scale =     0.7631, B  =   -7.3388
+Partial structure    1: scale =     0.3234, B  =   48.6877
+Overall anisotropic scale factors
+   B11 =  -0.43 B22 =  -0.43 B33 =   1.41 B12 =  -0.22 B13 =  -0.00 B23 =   0.00
+-----------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------
+Overall R factor                     =     0.1824
+Average Fourier shell correlation    =     0.9769
+Average correlation coefficient      =     0.9054
+Overall figure of merit              =     0.8939
+-----------------------------------------------------------------------------
+----------------------------------------------------------
+  Rigid body parameters will be applied to coordinates
+  as following
+
+ Xnew = Rot*Xold - Rot*Tg + Tg +deltaTg
+Where
+ Xnew and Xold are new and old coordinates of atoms in
+              this domain
+ Rot           is rotation matrix derived from Euler angles
+ Tg            is centre of mass of this domain
+ deltaTg       is shift of centre of mass
+----------------------------------------------------------
+Domain     1
+Centre of mass:    -22.118     7.720     0.888
+ Euler angles and deltaTg:       179.98     0.28   179.99    -0.01    -0.01     0.01
+
+ Matrix and deltaTg
+        1.000     0.001    -0.005
+       -0.001     1.000     0.000
+        0.005     0.000     1.000
+       -0.008    -0.012     0.012
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -90.00    96.72     0.28    -0.01    -0.01     0.01
+
+Domain     2
+Centre of mass:    -21.970     5.009     0.394
+ Euler angles and deltaTg:      -179.98     0.11  -179.97     0.01     0.01     0.02
+
+ Matrix and deltaTg
+        1.000    -0.001    -0.002
+        0.001     1.000    -0.000
+        0.002    -0.000     1.000
+        0.005     0.012     0.017
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -45.00   179.94     0.05     0.01     0.01     0.02
+
+Domain     3
+Centre of mass:    -22.269    11.498    -3.073
+ Euler angles and deltaTg:         0.00     0.00     0.00     0.04    -0.07     0.19
+
+ Matrix and deltaTg
+        1.000    -0.000     0.000
+        0.000     1.000     0.000
+       -0.000     0.000     1.000
+        0.040    -0.066     0.187
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:      0.00     0.00     0.00     0.04    -0.07     0.19
+
+Domain     4
+Centre of mass:    -24.667    18.867    -4.357
+ Euler angles and deltaTg:      -169.25     2.14  -178.71     0.10     0.05    -0.01
+
+ Matrix and deltaTg
+        0.977    -0.209    -0.037
+        0.209     0.978    -0.007
+        0.037    -0.001     0.999
+        0.098     0.054    -0.009
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -85.27    10.09    12.23     0.10     0.05    -0.01
+
+
+     Rigid body cycle =      3
+
+
+-----------------------------------------------------------------------------
+Overall scale should be multiplied by       1.0000
+Overall               : scale =     0.7643, B  =   -7.2073
+Partial structure    1: scale =     0.3234, B  =   48.3497
+Overall anisotropic scale factors
+   B11 =  -0.43 B22 =  -0.43 B33 =   1.39 B12 =  -0.21 B13 =  -0.00 B23 =   0.00
+-----------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------
+Overall R factor                     =     0.1816
+Average Fourier shell correlation    =     0.9770
+Average correlation coefficient      =     0.9060
+Overall figure of merit              =     0.8969
+-----------------------------------------------------------------------------
+----------------------------------------------------------
+  Rigid body parameters will be applied to coordinates
+  as following
+
+ Xnew = Rot*Xold - Rot*Tg + Tg +deltaTg
+Where
+ Xnew and Xold are new and old coordinates of atoms in
+              this domain
+ Rot           is rotation matrix derived from Euler angles
+ Tg            is centre of mass of this domain
+ deltaTg       is shift of centre of mass
+----------------------------------------------------------
+Domain     1
+Centre of mass:    -22.119     7.719     0.887
+ Euler angles and deltaTg:       179.98     0.31   179.98    -0.01    -0.01     0.01
+
+ Matrix and deltaTg
+        1.000     0.001    -0.005
+       -0.001     1.000     0.000
+        0.005     0.000     1.000
+       -0.009    -0.013     0.011
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -90.00    97.52     0.31    -0.01    -0.01     0.01
+
+Domain     2
+Centre of mass:    -21.970     5.009     0.395
+ Euler angles and deltaTg:      -179.98     0.17  -179.96     0.00     0.01     0.02
+
+ Matrix and deltaTg
+        1.000    -0.001    -0.003
+        0.001     1.000    -0.000
+        0.003    -0.000     1.000
+        0.005     0.012     0.018
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -45.00   179.91     0.06     0.00     0.01     0.02
+
+Domain     3
+Centre of mass:    -22.240    11.470    -3.014
+ Euler angles and deltaTg:         0.00     0.00     0.00     0.07    -0.09     0.25
+
+ Matrix and deltaTg
+        1.000    -0.000     0.000
+        0.000     1.000     0.000
+       -0.000     0.000     1.000
+        0.069    -0.093     0.246
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:      0.00     0.00     0.00     0.07    -0.09     0.25
+
+Domain     4
+Centre of mass:    -24.674    18.832    -4.376
+ Euler angles and deltaTg:      -156.72     1.40   174.01     0.09     0.02    -0.03
+
+ Matrix and deltaTg
+        0.955    -0.297    -0.022
+        0.297     0.955    -0.010
+        0.024     0.003     1.000
+        0.091     0.019    -0.028
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -75.37     4.66    17.35     0.09     0.02    -0.03
+
+
+     Rigid body cycle =      4
+
+
+-----------------------------------------------------------------------------
+Overall scale should be multiplied by       1.0000
+Overall               : scale =     0.7662, B  =   -7.1296
+Partial structure    1: scale =     0.3231, B  =   48.5931
+Overall anisotropic scale factors
+   B11 =  -0.43 B22 =  -0.43 B33 =   1.40 B12 =  -0.22 B13 =  -0.00 B23 =   0.00
+-----------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------
+Overall R factor                     =     0.1814
+Average Fourier shell correlation    =     0.9771
+Average correlation coefficient      =     0.9062
+Overall figure of merit              =     0.8971
+-----------------------------------------------------------------------------
+----------------------------------------------------------
+  Rigid body parameters will be applied to coordinates
+  as following
+
+ Xnew = Rot*Xold - Rot*Tg + Tg +deltaTg
+Where
+ Xnew and Xold are new and old coordinates of atoms in
+              this domain
+ Rot           is rotation matrix derived from Euler angles
+ Tg            is centre of mass of this domain
+ deltaTg       is shift of centre of mass
+----------------------------------------------------------
+Domain     1
+Centre of mass:    -22.119     7.718     0.887
+ Euler angles and deltaTg:       179.97     0.32   179.98    -0.01    -0.01     0.01
+
+ Matrix and deltaTg
+        1.000     0.001    -0.006
+       -0.001     1.000     0.000
+        0.006     0.000     1.000
+       -0.009    -0.014     0.011
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -90.00    97.87     0.33    -0.01    -0.01     0.01
+
+Domain     2
+Centre of mass:    -21.970     5.009     0.394
+ Euler angles and deltaTg:      -179.98     0.22  -179.95     0.00     0.01     0.02
+
+ Matrix and deltaTg
+        1.000    -0.001    -0.004
+        0.001     1.000    -0.000
+        0.004    -0.000     1.000
+        0.005     0.012     0.017
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -45.00   179.89     0.07     0.00     0.01     0.02
+
+Domain     3
+Centre of mass:    -22.215    11.450    -2.971
+ Euler angles and deltaTg:         0.00     0.00     0.00     0.09    -0.11     0.29
+
+ Matrix and deltaTg
+        1.000    -0.000     0.000
+        0.000     1.000     0.000
+       -0.000     0.000     1.000
+        0.094    -0.113     0.289
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:      0.00     0.00     0.00     0.09    -0.11     0.29
+
+Domain     4
+Centre of mass:    -24.666    18.805    -4.362
+ Euler angles and deltaTg:      -112.53     0.66   134.17     0.10    -0.01    -0.01
+
+ Matrix and deltaTg
+        0.929    -0.369    -0.004
+        0.369     0.929    -0.011
+        0.008     0.008     1.000
+        0.099    -0.009    -0.014
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -33.35     1.77    21.66     0.10    -0.01    -0.01
+
+
+     Rigid body cycle =      5
+
+
+-----------------------------------------------------------------------------
+Overall scale should be multiplied by       1.0000
+Overall               : scale =     0.7669, B  =   -7.0536
+Partial structure    1: scale =     0.3236, B  =   48.3012
+Overall anisotropic scale factors
+   B11 =  -0.43 B22 =  -0.43 B33 =   1.40 B12 =  -0.22 B13 =  -0.00 B23 =   0.00
+-----------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------
+Overall R factor                     =     0.1813
+Average Fourier shell correlation    =     0.9771
+Average correlation coefficient      =     0.9063
+Overall figure of merit              =     0.8972
+-----------------------------------------------------------------------------
+----------------------------------------------------------
+  Rigid body parameters will be applied to coordinates
+  as following
+
+ Xnew = Rot*Xold - Rot*Tg + Tg +deltaTg
+Where
+ Xnew and Xold are new and old coordinates of atoms in
+              this domain
+ Rot           is rotation matrix derived from Euler angles
+ Tg            is centre of mass of this domain
+ deltaTg       is shift of centre of mass
+----------------------------------------------------------
+Domain     1
+Centre of mass:    -22.119     7.718     0.886
+ Euler angles and deltaTg:       179.97     0.33   179.98    -0.01    -0.01     0.01
+
+ Matrix and deltaTg
+        1.000     0.001    -0.006
+       -0.001     1.000     0.000
+        0.006     0.000     1.000
+       -0.009    -0.014     0.010
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -90.00    98.09     0.33    -0.01    -0.01     0.01
+
+Domain     2
+Centre of mass:    -21.971     5.008     0.394
+ Euler angles and deltaTg:      -179.98     0.25  -179.95     0.00     0.01     0.02
+
+ Matrix and deltaTg
+        1.000    -0.001    -0.004
+        0.001     1.000    -0.000
+        0.004    -0.000     1.000
+        0.004     0.011     0.017
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -45.00   179.87     0.07     0.00     0.01     0.02
+
+Domain     3
+Centre of mass:    -22.195    11.434    -2.943
+ Euler angles and deltaTg:         0.00     0.00     0.00     0.11    -0.13     0.32
+
+ Matrix and deltaTg
+        1.000    -0.000     0.000
+        0.000     1.000     0.000
+       -0.000     0.000     1.000
+        0.114    -0.129     0.317
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:      0.00     0.00     0.00     0.11    -0.13     0.32
+
+Domain     4
+Centre of mass:    -24.667    18.774    -4.367
+ Euler angles and deltaTg:       -42.96     0.88    68.38     0.10    -0.04    -0.02
+
+ Matrix and deltaTg
+        0.903    -0.429     0.011
+        0.429     0.903    -0.010
+       -0.006     0.014     1.000
+        0.098    -0.040    -0.019
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:     34.33     2.00    25.44     0.10    -0.04    -0.02
+
+
+     Rigid body cycle =      6
+
+
+-----------------------------------------------------------------------------
+Overall scale should be multiplied by       1.0000
+Overall               : scale =     0.7662, B  =   -7.1421
+Partial structure    1: scale =     0.3251, B  =   47.8498
+Overall anisotropic scale factors
+   B11 =  -0.44 B22 =  -0.44 B33 =   1.42 B12 =  -0.22 B13 =  -0.00 B23 =   0.00
+-----------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------
+Overall R factor                     =     0.1813
+Average Fourier shell correlation    =     0.9771
+Average correlation coefficient      =     0.9062
+Overall figure of merit              =     0.8970
+-----------------------------------------------------------------------------
+----------------------------------------------------------
+  Rigid body parameters will be applied to coordinates
+  as following
+
+ Xnew = Rot*Xold - Rot*Tg + Tg +deltaTg
+Where
+ Xnew and Xold are new and old coordinates of atoms in
+              this domain
+ Rot           is rotation matrix derived from Euler angles
+ Tg            is centre of mass of this domain
+ deltaTg       is shift of centre of mass
+----------------------------------------------------------
+Domain     1
+Centre of mass:    -22.119     7.718     0.886
+ Euler angles and deltaTg:       179.97     0.33   179.98    -0.01    -0.01     0.01
+
+ Matrix and deltaTg
+        1.000     0.001    -0.006
+       -0.001     1.000     0.000
+        0.006     0.000     1.000
+       -0.009    -0.014     0.010
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -90.00    98.16     0.34    -0.01    -0.01     0.01
+
+Domain     2
+Centre of mass:    -21.973     5.008     0.393
+ Euler angles and deltaTg:      -179.98     0.27  -179.95     0.00     0.01     0.02
+
+ Matrix and deltaTg
+        1.000    -0.001    -0.005
+        0.001     1.000    -0.000
+        0.005    -0.000     1.000
+        0.002     0.011     0.017
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -90.02    74.88     0.28     0.00     0.01     0.02
+
+Domain     3
+Centre of mass:    -22.178    11.423    -2.920
+ Euler angles and deltaTg:         0.00     0.00     0.00     0.13    -0.14     0.34
+
+ Matrix and deltaTg
+        1.000    -0.000     0.000
+        0.000     1.000     0.000
+       -0.000     0.000     1.000
+        0.132    -0.140     0.340
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:      0.00     0.00     0.00     0.13    -0.14     0.34
+
+Domain     4
+Centre of mass:    -24.659    18.776    -4.356
+ Euler angles and deltaTg:       -50.47     0.73    79.90     0.11    -0.04    -0.01
+
+ Matrix and deltaTg
+        0.871    -0.491     0.008
+        0.491     0.871    -0.010
+       -0.002     0.013     1.000
+        0.106    -0.037    -0.008
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:     24.82     1.43    29.44     0.11    -0.04    -0.01
+
+
+     Rigid body cycle =      7
+
+
+-----------------------------------------------------------------------------
+Overall scale should be multiplied by       1.0000
+Overall               : scale =     0.7664, B  =   -7.1106
+Partial structure    1: scale =     0.3257, B  =   48.1423
+Overall anisotropic scale factors
+   B11 =  -0.43 B22 =  -0.43 B33 =   1.40 B12 =  -0.22 B13 =  -0.00 B23 =   0.00
+-----------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------
+Overall R factor                     =     0.1814
+Average Fourier shell correlation    =     0.9771
+Average correlation coefficient      =     0.9062
+Overall figure of merit              =     0.8970
+-----------------------------------------------------------------------------
+----------------------------------------------------------
+  Rigid body parameters will be applied to coordinates
+  as following
+
+ Xnew = Rot*Xold - Rot*Tg + Tg +deltaTg
+Where
+ Xnew and Xold are new and old coordinates of atoms in
+              this domain
+ Rot           is rotation matrix derived from Euler angles
+ Tg            is centre of mass of this domain
+ deltaTg       is shift of centre of mass
+----------------------------------------------------------
+Domain     1
+Centre of mass:    -22.119     7.718     0.886
+ Euler angles and deltaTg:       179.97     0.34   179.98    -0.01    -0.01     0.01
+
+ Matrix and deltaTg
+        1.000     0.001    -0.006
+       -0.001     1.000     0.000
+        0.006     0.000     1.000
+       -0.009    -0.014     0.010
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -90.00    98.18     0.34    -0.01    -0.01     0.01
+
+Domain     2
+Centre of mass:    -21.974     5.007     0.393
+ Euler angles and deltaTg:      -179.98     0.29  -179.95     0.00     0.01     0.02
+
+ Matrix and deltaTg
+        1.000    -0.001    -0.005
+        0.001     1.000    -0.000
+        0.005    -0.000     1.000
+        0.002     0.011     0.016
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -90.02    76.10     0.30     0.00     0.01     0.02
+
+Domain     3
+Centre of mass:    -22.165    11.417    -2.907
+ Euler angles and deltaTg:         0.00     0.00     0.00     0.14    -0.15     0.35
+
+ Matrix and deltaTg
+        1.000    -0.000     0.000
+        0.000     1.000     0.000
+       -0.000     0.000     1.000
+        0.144    -0.146     0.353
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:      0.00     0.00     0.00     0.14    -0.15     0.35
+
+Domain     4
+Centre of mass:    -24.654    18.777    -4.376
+ Euler angles and deltaTg:      -118.85     0.64   151.21     0.11    -0.04    -0.03
+
+ Matrix and deltaTg
+        0.845    -0.535    -0.005
+        0.535     0.845    -0.010
+        0.010     0.005     1.000
+        0.111    -0.037    -0.028
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -45.03     1.14    32.36     0.11    -0.04    -0.03
+
+
+     Rigid body cycle =      8
+
+
+-----------------------------------------------------------------------------
+Overall scale should be multiplied by       1.0000
+Overall               : scale =     0.7660, B  =   -7.1598
+Partial structure    1: scale =     0.3263, B  =   48.1416
+Overall anisotropic scale factors
+   B11 =  -0.43 B22 =  -0.43 B33 =   1.41 B12 =  -0.22 B13 =  -0.00 B23 =   0.00
+-----------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------
+Overall R factor                     =     0.1814
+Average Fourier shell correlation    =     0.9771
+Average correlation coefficient      =     0.9062
+Overall figure of merit              =     0.8969
+-----------------------------------------------------------------------------
+----------------------------------------------------------
+  Rigid body parameters will be applied to coordinates
+  as following
+
+ Xnew = Rot*Xold - Rot*Tg + Tg +deltaTg
+Where
+ Xnew and Xold are new and old coordinates of atoms in
+              this domain
+ Rot           is rotation matrix derived from Euler angles
+ Tg            is centre of mass of this domain
+ deltaTg       is shift of centre of mass
+----------------------------------------------------------
+Domain     1
+Centre of mass:    -22.120     7.718     0.886
+ Euler angles and deltaTg:       179.97     0.34   179.98    -0.01    -0.01     0.01
+
+ Matrix and deltaTg
+        1.000     0.001    -0.006
+       -0.001     1.000     0.000
+        0.006     0.000     1.000
+       -0.010    -0.014     0.010
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -90.00    98.14     0.34    -0.01    -0.01     0.01
+
+Domain     2
+Centre of mass:    -21.974     5.007     0.392
+ Euler angles and deltaTg:      -179.98     0.31  -179.94     0.00     0.01     0.02
+
+ Matrix and deltaTg
+        1.000    -0.001    -0.005
+        0.001     1.000    -0.000
+        0.005    -0.000     1.000
+        0.002     0.010     0.015
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -90.02    76.82     0.32     0.00     0.01     0.02
+
+Domain     3
+Centre of mass:    -22.156    11.413    -2.899
+ Euler angles and deltaTg:         0.00     0.00     0.00     0.15    -0.15     0.36
+
+ Matrix and deltaTg
+        1.000    -0.000     0.000
+        0.000     1.000     0.000
+       -0.000     0.000     1.000
+        0.153    -0.151     0.361
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:      0.00     0.00     0.00     0.15    -0.15     0.36
+
+Domain     4
+Centre of mass:    -24.639    18.786    -4.385
+ Euler angles and deltaTg:      -151.01     1.21  -174.04     0.13    -0.03    -0.04
+
+ Matrix and deltaTg
+        0.819    -0.573    -0.019
+        0.573     0.820    -0.010
+        0.021    -0.002     1.000
+        0.126    -0.028    -0.036
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -78.48     2.02    34.97     0.13    -0.03    -0.04
+
+
+     Rigid body cycle =      9
+
+
+-----------------------------------------------------------------------------
+Overall scale should be multiplied by       1.0000
+Overall               : scale =     0.7660, B  =   -7.1701
+Partial structure    1: scale =     0.3264, B  =   48.3096
+Overall anisotropic scale factors
+   B11 =  -0.44 B22 =  -0.44 B33 =   1.41 B12 =  -0.22 B13 =  -0.00 B23 =   0.00
+-----------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------
+Overall R factor                     =     0.1814
+Average Fourier shell correlation    =     0.9770
+Average correlation coefficient      =     0.9062
+Overall figure of merit              =     0.8969
+-----------------------------------------------------------------------------
+----------------------------------------------------------
+  Rigid body parameters will be applied to coordinates
+  as following
+
+ Xnew = Rot*Xold - Rot*Tg + Tg +deltaTg
+Where
+ Xnew and Xold are new and old coordinates of atoms in
+              this domain
+ Rot           is rotation matrix derived from Euler angles
+ Tg            is centre of mass of this domain
+ deltaTg       is shift of centre of mass
+----------------------------------------------------------
+Domain     1
+Centre of mass:    -22.120     7.718     0.886
+ Euler angles and deltaTg:       179.97     0.34   179.98    -0.01    -0.01     0.01
+
+ Matrix and deltaTg
+        1.000     0.001    -0.006
+       -0.001     1.000     0.000
+        0.006     0.000     1.000
+       -0.010    -0.014     0.010
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -90.00    98.11     0.34    -0.01    -0.01     0.01
+
+Domain     2
+Centre of mass:    -21.974     5.007     0.391
+ Euler angles and deltaTg:      -179.98     0.32  -179.94     0.00     0.01     0.01
+
+ Matrix and deltaTg
+        1.000    -0.001    -0.006
+        0.001     1.000    -0.000
+        0.006    -0.000     1.000
+        0.001     0.010     0.015
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -90.02    77.17     0.33     0.00     0.01     0.01
+
+Domain     3
+Centre of mass:    -22.150    11.410    -2.894
+ Euler angles and deltaTg:         0.00     0.00     0.00     0.16    -0.15     0.37
+
+ Matrix and deltaTg
+        1.000    -0.000     0.000
+        0.000     1.000     0.000
+       -0.000     0.000     1.000
+        0.159    -0.153     0.366
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:      0.00     0.00     0.00     0.16    -0.15     0.37
+
+Domain     4
+Centre of mass:    -24.628    18.791    -4.391
+ Euler angles and deltaTg:      -162.13     2.12  -160.61     0.14    -0.02    -0.04
+
+ Matrix and deltaTg
+        0.795    -0.605    -0.035
+        0.605     0.796    -0.011
+        0.035    -0.012     0.999
+        0.137    -0.023    -0.043
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -90.76     3.31    37.31     0.14    -0.02    -0.04
+
+
+     Rigid body cycle =     10
+
+
+-----------------------------------------------------------------------------
+Overall scale should be multiplied by       1.0000
+Overall               : scale =     0.7640, B  =   -7.3599
+Partial structure    1: scale =     0.3256, B  =   48.0495
+Overall anisotropic scale factors
+   B11 =  -0.44 B22 =  -0.44 B33 =   1.42 B12 =  -0.22 B13 =  -0.00 B23 =   0.00
+-----------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------
+
+    ****                Things for loggraph, R factor and others                ****
+
+
+$TABLE: Cycle   10. Rfactor analysis, F distribution v resln  :
+$GRAPHS:Cycle   10. M(Rfactor) v. resln :N:1,6,7:
+:Cycle   10. M(Fobs) and M(Fc) v. resln :N:1,4,5:
+:Cycle   10. % observed v. resln :N:1,3:
+$$
+M(4SSQ/LL) NR_used %_obs M(Fo_used) M(Fc_used) Rf_used WR_used $$
+$$
+ 0.006     107 100.00   601.7   565.8  0.26  0.28
+ 0.010     128 100.00   639.5   654.8  0.20  0.20
+ 0.014     157 100.00   600.0   578.2  0.16  0.17
+ 0.018     164 100.00   469.5   444.1  0.20  0.24
+ 0.022     176 100.00   385.0   355.3  0.22  0.25
+ 0.026     197 100.00   404.3   385.0  0.21  0.26
+ 0.030     212 100.00   384.0   362.0  0.22  0.26
+ 0.033     214 100.00   401.2   363.5  0.19  0.22
+ 0.037     242 100.00   433.8   406.8  0.19  0.23
+ 0.041     242 100.00   497.0   466.8  0.15  0.18
+ 0.045     245 100.00   521.8   491.1  0.16  0.19
+ 0.049     273 100.00   532.7   503.8  0.15  0.18
+ 0.053     269 100.00   499.6   474.3  0.16  0.19
+ 0.057     276 100.00   455.9   431.7  0.17  0.19
+ 0.060     303 100.00   398.3   387.7  0.18  0.21
+ 0.064     291 100.00   404.4   386.8  0.18  0.21
+ 0.068     302 100.00   373.6   359.7  0.18  0.22
+ 0.072     321 100.00   353.9   355.6  0.19  0.23
+ 0.076     329 100.00   360.0   355.6  0.18  0.22
+ 0.080     307 100.00   334.6   337.7  0.17  0.21
+$$
+
+    ****                      Fom and SigmaA vs resolution                      ****
+
+ $TABLE: Cycle   10. FSC and  Fom(<cos(DelPhi)>-acentric, centric, overall v resln:
+ $GRAPHS:Cycle   10. M(Fom) v. resln :N:1,3,5,7,8,9,10:
+ $$
+ <4SSQ/LL> NREFa  FOMa  NREFc FOMc NREFall FOMall  SigmaA_Fc1 FSCwork CorrFofcWork$$
+ $$
+  0.0064     67   0.890     40   0.867    107   0.881  0.895  0.9551  0.8499
+  0.0102     94   0.919     34   0.835    128   0.897  0.851  0.9777  0.9176
+  0.0141    113   0.926     44   0.891    157   0.916  0.896  0.9809  0.9214
+  0.0180    126   0.912     38   0.777    164   0.881  0.935  0.9724  0.9005
+  0.0218    139   0.872     37   0.666    176   0.829  0.923  0.9667  0.8883
+  0.0257    162   0.909     35   0.808    197   0.891  1.040  0.9708  0.8645
+  0.0295    169   0.902     43   0.798    212   0.881  1.043  0.9675  0.8708
+  0.0334    179   0.887     35   0.814    214   0.875  0.984  0.9759  0.8967
+  0.0372    201   0.904     41   0.817    242   0.889  1.073  0.9733  0.9003
+  0.0411    205   0.913     37   0.867    242   0.906  1.096  0.9793  0.9405
+  0.0450    204   0.929     41   0.878    245   0.920  1.037  0.9824  0.9286
+  0.0488    234   0.933     39   0.968    273   0.938  1.001  0.9847  0.9326
+  0.0527    234   0.921     35   0.860    269   0.913  0.971  0.9812  0.9157
+  0.0565    233   0.930     43   0.819    276   0.912  0.994  0.9807  0.9121
+  0.0604    264   0.919     39   0.861    303   0.912  1.014  0.9796  0.9062
+  0.0643    253   0.913     38   0.863    291   0.907  0.981  0.9764  0.9047
+  0.0681    259   0.917     43   0.842    302   0.906  1.018  0.9787  0.9057
+  0.0720    280   0.922     41   0.742    321   0.899  0.958  0.9754  0.8963
+  0.0758    286   0.894     43   0.818    329   0.884  0.890  0.9794  0.9087
+  0.0797    275   0.876     32   0.745    307   0.862  0.837  0.9808  0.9166
+ $$
+Resolution limits                    =     15.000     3.500
+Number of used reflections           =       4755
+Percentage observed                  =    98.4065
+Percentage of free reflections       =     0.0000
+Overall R factor                     =     0.1814
+Average Fourier shell correlation    =     0.9770
+Overall weighted R factor            =     0.2137
+Overall weighted R2 factor           =     0.2758
+Average correlation coefficient      =     0.9062
+Overall correlation coefficient      =     0.9123
+Cruickshanks DPI for coordinate error=     0.4837
+Overall figure of merit              =     0.8968
+ML based su of positional parameters =     0.3340
+ML based su of thermal parameters    =    20.9699
+-----------------------------------------------------------------------------
+----------------------------------------------------------
+  Rigid body parameters will be applied to coordinates
+  as following
+
+ Xnew = Rot*Xold - Rot*Tg + Tg +deltaTg
+Where
+ Xnew and Xold are new and old coordinates of atoms in
+              this domain
+ Rot           is rotation matrix derived from Euler angles
+ Tg            is centre of mass of this domain
+ deltaTg       is shift of centre of mass
+----------------------------------------------------------
+Domain     1
+Centre of mass:    -22.120     7.718     0.886
+ Euler angles and deltaTg:       179.97     0.34   179.98    -0.01    -0.01     0.01
+
+ Matrix and deltaTg
+        1.000     0.001    -0.006
+       -0.001     1.000     0.000
+        0.006     0.000     1.000
+       -0.010    -0.014     0.010
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -90.00    98.10     0.34    -0.01    -0.01     0.01
+
+Domain     2
+Centre of mass:    -21.974     5.006     0.391
+ Euler angles and deltaTg:      -179.98     0.33  -179.94     0.00     0.01     0.01
+
+ Matrix and deltaTg
+        1.000    -0.001    -0.006
+        0.001     1.000    -0.000
+        0.006    -0.000     1.000
+        0.001     0.009     0.014
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -90.02    77.35     0.33     0.00     0.01     0.01
+
+Domain     3
+Centre of mass:    -22.145    11.409    -2.892
+ Euler angles and deltaTg:         0.00     0.00     0.00     0.16    -0.15     0.37
+
+ Matrix and deltaTg
+        1.000    -0.000     0.000
+        0.000     1.000     0.000
+       -0.000     0.000     1.000
+        0.164    -0.155     0.368
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:      0.00     0.00     0.00     0.16    -0.15     0.37
+
+Domain     4
+Centre of mass:    -24.615    18.796    -4.396
+ Euler angles and deltaTg:      -164.99     2.85  -155.63     0.15    -0.02    -0.05
+
+ Matrix and deltaTg
+        0.772    -0.634    -0.048
+        0.634     0.773    -0.013
+        0.045    -0.021     0.999
+        0.149    -0.017    -0.047
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -94.68     4.23    39.47     0.15    -0.02    -0.05
+
+----------------------------------------------------------
+  Rigid body parameters will be applied to coordinates
+  as following
+
+ Xnew = Rot*Xold - Rot*Tg + Tg +deltaTg
+Where
+ Xnew and Xold are new and old coordinates of atoms in
+              this domain
+ Rot           is rotation matrix derived from Euler angles
+ Tg            is centre of mass of this domain
+ deltaTg       is shift of centre of mass
+----------------------------------------------------------
+Domain     1
+Centre of mass:    -22.120     7.718     0.886
+ Euler angles and deltaTg:       179.97     0.34   179.98    -0.01    -0.01     0.01
+
+ Matrix and deltaTg
+        1.000     0.001    -0.006
+       -0.001     1.000     0.000
+        0.006     0.000     1.000
+       -0.010    -0.014     0.010
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -90.00    98.10     0.34    -0.01    -0.01     0.01
+
+Domain     2
+Centre of mass:    -21.974     5.006     0.391
+ Euler angles and deltaTg:      -179.98     0.33  -179.94     0.00     0.01     0.01
+
+ Matrix and deltaTg
+        1.000    -0.001    -0.006
+        0.001     1.000    -0.000
+        0.006    -0.000     1.000
+        0.001     0.009     0.014
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -90.02    77.35     0.33     0.00     0.01     0.01
+
+Domain     3
+Centre of mass:    -22.145    11.409    -2.892
+ Euler angles and deltaTg:         0.00     0.00     0.00     0.16    -0.15     0.37
+
+ Matrix and deltaTg
+        1.000    -0.000     0.000
+        0.000     1.000     0.000
+       -0.000     0.000     1.000
+        0.164    -0.155     0.368
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:      0.00     0.00     0.00     0.16    -0.15     0.37
+
+Domain     4
+Centre of mass:    -24.615    18.796    -4.396
+ Euler angles and deltaTg:      -164.99     2.85  -155.63     0.15    -0.02    -0.05
+
+ Matrix and deltaTg
+        0.772    -0.634    -0.048
+        0.634     0.773    -0.013
+        0.045    -0.021     0.999
+        0.149    -0.017    -0.047
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    -94.68     4.23    39.47     0.15    -0.02    -0.05
+
+ LABOUT F=F SIGF=SIGF FC=FC PHIC=PHIC FC_ALL=FC_ALL PHIC_ALL=PHIC_ALL FWT=FWT PHWT=PHWT DELFWT=DELFWT PHDELWT=PHDELWT FOM=FOM FC_ALL_LS=FC_ALL_LS PHIC_ALL_LS=PHIC_ALL_LS
+
+ WRITTEN OUTPUT MTZ FILE 
+ Logical Name: HKLOUT   Filename: refmacRB.mtz 
+
+
+-----------------------------------------------------------------------------
+Overall scale should be multiplied by       1.0000
+Overall               : scale =     0.7638, B  =   -7.3715
+Partial structure    1: scale =     0.3254, B  =   48.0559
+Overall anisotropic scale factors
+   B11 =  -0.44 B22 =  -0.44 B33 =   1.42 B12 =  -0.22 B13 =  -0.00 B23 =   0.00
+-----------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------
+
+    ****                Things for loggraph, R factor and others                ****
+
+
+$TABLE: Cycle   11. Rfactor analysis, F distribution v resln  :
+$GRAPHS:Cycle   11. M(Rfactor) v. resln :N:1,6,7:
+:Cycle   11. M(Fobs) and M(Fc) v. resln :N:1,4,5:
+:Cycle   11. % observed v. resln :N:1,3:
+$$
+M(4SSQ/LL) NR_used %_obs M(Fo_used) M(Fc_used) Rf_used WR_used $$
+$$
+ 0.006     107 100.00   601.8   566.2  0.26  0.28
+ 0.010     128 100.00   639.6   654.9  0.20  0.20
+ 0.014     157 100.00   600.2   578.4  0.16  0.17
+ 0.018     164 100.00   469.7   444.0  0.20  0.24
+ 0.022     176 100.00   385.1   355.3  0.22  0.25
+ 0.026     197 100.00   404.4   385.0  0.21  0.26
+ 0.030     212 100.00   384.1   362.1  0.22  0.26
+ 0.033     214 100.00   401.3   363.5  0.19  0.22
+ 0.037     242 100.00   433.9   406.8  0.19  0.23
+ 0.041     242 100.00   497.1   466.9  0.15  0.18
+ 0.045     245 100.00   521.9   491.1  0.16  0.19
+ 0.049     273 100.00   532.9   503.8  0.15  0.18
+ 0.053     269 100.00   499.7   474.4  0.16  0.19
+ 0.057     276 100.00   456.0   431.8  0.17  0.19
+ 0.060     303 100.00   398.4   387.8  0.18  0.21
+ 0.064     291 100.00   404.5   386.9  0.18  0.21
+ 0.068     302 100.00   373.7   359.7  0.18  0.22
+ 0.072     321 100.00   353.9   355.7  0.19  0.23
+ 0.076     329 100.00   360.1   355.6  0.18  0.22
+ 0.080     307 100.00   334.7   337.7  0.17  0.21
+$$
+
+    ****                      Fom and SigmaA vs resolution                      ****
+
+ $TABLE: Cycle   11. FSC and  Fom(<cos(DelPhi)>-acentric, centric, overall v resln:
+ $GRAPHS:Cycle   11. M(Fom) v. resln :N:1,3,5,7,8,9,10:
+ $$
+ <4SSQ/LL> NREFa  FOMa  NREFc FOMc NREFall FOMall  SigmaA_Fc1 FSCwork CorrFofcWork$$
+ $$
+  0.0064     67   0.890     40   0.867    107   0.881  0.895  0.9551  0.8500
+  0.0102     94   0.919     34   0.835    128   0.897  0.851  0.9777  0.9176
+  0.0141    113   0.925     44   0.891    157   0.916  0.896  0.9809  0.9213
+  0.0180    126   0.912     38   0.775    164   0.880  0.935  0.9723  0.9003
+  0.0218    139   0.872     37   0.666    176   0.829  0.923  0.9668  0.8886
+  0.0257    162   0.909     35   0.808    197   0.891  1.040  0.9708  0.8643
+  0.0295    169   0.902     43   0.797    212   0.881  1.043  0.9674  0.8707
+  0.0334    179   0.886     35   0.813    214   0.874  0.984  0.9759  0.8968
+  0.0372    201   0.904     41   0.818    242   0.889  1.073  0.9733  0.9003
+  0.0411    205   0.913     37   0.868    242   0.906  1.096  0.9794  0.9404
+  0.0450    204   0.929     41   0.879    245   0.920  1.037  0.9824  0.9286
+  0.0488    234   0.933     39   0.967    273   0.938  1.001  0.9847  0.9325
+  0.0527    234   0.921     35   0.860    269   0.913  0.971  0.9812  0.9157
+  0.0565    233   0.930     43   0.818    276   0.912  0.994  0.9807  0.9120
+  0.0604    264   0.919     39   0.860    303   0.912  1.014  0.9796  0.9062
+  0.0643    253   0.913     38   0.863    291   0.907  0.981  0.9764  0.9047
+  0.0681    259   0.917     43   0.842    302   0.906  1.018  0.9787  0.9057
+  0.0720    280   0.922     41   0.742    321   0.899  0.958  0.9754  0.8964
+  0.0758    286   0.894     43   0.818    329   0.884  0.890  0.9794  0.9086
+  0.0797    275   0.876     32   0.746    307   0.862  0.837  0.9808  0.9166
+ $$
+Resolution limits                    =     15.000     3.500
+Number of used reflections           =       4755
+Percentage observed                  =    98.4065
+Percentage of free reflections       =     0.0000
+Overall R factor                     =     0.1815
+Average Fourier shell correlation    =     0.9770
+Overall weighted R factor            =     0.2138
+Overall weighted R2 factor           =     0.2759
+Average correlation coefficient      =     0.9062
+Overall correlation coefficient      =     0.9122
+Cruickshanks DPI for coordinate error=     0.4838
+Overall figure of merit              =     0.8967
+ML based su of positional parameters =     0.1075E-03
+ML based su of thermal parameters    =     0.0072
+-----------------------------------------------------------------------------
+  Time in seconds: CPU =         5.86
+             Elapsed =           0.00
+
+    ****           Things for loggraph, R factor and others vs cycle            ****
+
+
+$TABLE: Rfactor analysis, stats vs cycle  :
+$GRAPHS:<Rfactor> vs cycle :N:1,2,3:
+:FOM vs cycle :N:1,4:
+:-LL vs cycle :N:1,5:
+:-LLfree vs cycle :N:1,6:
+:Geometry vs cycle:N:1,7,8,9,10,11:
+$$
+    Ncyc    Rfact    Rfree     FOM      -LL     -LLfree  rmsBOND  zBOND rmsANGL  zANGL rmsCHIRAL $$
+$$
+       0   0.1863   0.0      0.892       28553.       0   0.0      0.0    0.0     0.0      0.0
+       1   0.1824   0.0      0.894       28454.       0   0.0      0.0    0.0     0.0      0.0
+       2   0.1816   0.0      0.897       28425.       0   0.0      0.0    0.0     0.0      0.0
+       3   0.1814   0.0      0.897       28411.       0   0.0      0.0    0.0     0.0      0.0
+       4   0.1813   0.0      0.897       28406.       0   0.0      0.0    0.0     0.0      0.0
+       5   0.1813   0.0      0.897       28415.       0   0.0      0.0    0.0     0.0      0.0
+       6   0.1814   0.0      0.897       28413.       0   0.0      0.0    0.0     0.0      0.0
+       7   0.1814   0.0      0.897       28414.       0   0.0      0.0    0.0     0.0      0.0
+       8   0.1814   0.0      0.897       28416.       0   0.0      0.0    0.0     0.0      0.0
+       9   0.1814   0.0      0.897       28430.       0   0.0      0.0    0.0     0.0      0.0
+      10   0.1815   0.0      0.897       28431.       0   0.0      0.0    0.0     0.0      0.0
+ $$
+ $TEXT:Result: $$ Final results $$
+                      Initial    Final
+           R factor    0.1863   0.1815
+ $$
+ Harvest: NO PNAME_KEYWRD given - no deposit file created
+<!--SUMMARY_BEGIN-->
+ Refmac:  End of Refmac_5.8.0431   
+Times: User:       6.1s System:    0.1s Elapsed:     0:06  
+<!--SUMMARY_END-->

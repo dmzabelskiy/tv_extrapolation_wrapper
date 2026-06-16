@@ -1,0 +1,29 @@
+general:
+  name_machine: esrf_5ms_2
+  name_human: esrf_5ms_2
+  output_folder: results/it_tv_extrapolated_maps
+  plot_folder: results/it_tv_extrapolated_maps/esrf_5ms_2
+  high_resolution_limit: 2.2
+  comparison_type: triggered
+input_files:
+  map_dark: results/it_tv_extrapolated_maps/esrf_5ms_2/esrf_5ms_2_dark_finite.mtz
+  map_triggered: results/it_tv_extrapolated_maps/esrf_5ms_2/esrf_5ms_2_triggered_finite.mtz
+  pdb_dark: initial/esrf_5ms_2/OLPVR1_id30a3_ground_refine_8.pdb
+  impose_dark_phases: true
+  columns_are_ints: false
+  columns_dark:
+    amplitude_column: F
+    phase_column: MODEL
+    uncertainty_column: SIGF
+  columns_triggered:
+    amplitude_column: F
+    phase_column: MODEL
+    uncertainty_column: SIGF
+map_processing:
+  diffmap_type: it_tv
+  dark_mean_correction: true
+  simple_dark_correction: true
+  calculate_diffmap_before_f000: false
+plot:
+  show_plot: false
+  save_to_file: true

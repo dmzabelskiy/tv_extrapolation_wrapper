@@ -1,0 +1,25 @@
+
+     ### Dimple v2.6.2. Problems and suggestions: ccp4.github.io/dimple ###
+MTZ (1.9A)            P 3 2 1      (83.28, 83.28, 90.18,  90, 90, 120.00)
+ech_prefin.pdb        P 32 2 1     (83.50, 83.50, 90.26,  90, 90, 120.00)
+  1 rwcontents       0.1s  6 x 35kDa (+ 3kDa het) in 545nm3, 53% solvent
+  2 pointless        1.1s  resol. 1.90 A   #refl: 29001
+    [-h,-k,l]  CC: 0.798    cell diff: 0.2A
+    [h,k,l]    CC: 0.047    cell diff: 0.2A
+reindexed MTZ         P 32 2 1     (83.28, 83.28, 90.18,  90, 90, 120.00)
+  3 truncate         0.2s  B=35.8
+Rigid-body refinement with resolution 3.5 A, 10 cycles. 0.6 waters/aa.
+  4 refmac5 rigid    6.6s  10/10   R  0.1778  ->  0.1731
+No MR for R < 0.4.
+Generate free-R flags (repeatably)
+  5 unique           0.3s  
+  6 freerflag        1.0s  
+  7 cad              0.5s  #refl  29037 -> 29037
+Restrained refinement, 4+8 cycles.
+  8 refmac5 jelly   19.1s   4/4   R/Rfree  0.2072/0.2114  ->  0.1806/0.2034
+    RMS:   bond 0.016 -> 0.009   angle 1.71 -> 1.70   chiral 0.08 -> 0.10
+  9 refmac5 restr   37.5s   8/8   R/Rfree  0.1765/0.1993  ->  0.1681/0.2065
+    RMS:   bond 0.009 -> 0.007   angle 1.70 -> 1.64   chiral 0.10 -> 0.08
+ 10 find-blobs       0.4s  searching with cut-off: 0.185 e/A^3 (0.8 sigma)
+Unmodelled blobs not found.
+To see it in Coot run /gpfs/offline1/visitors/micromax/20251850/20260513/dzabelsk/TR_CAN_comb/laser1/dimple_processing/coot.sh

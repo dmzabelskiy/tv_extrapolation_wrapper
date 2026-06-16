@@ -1,0 +1,211 @@
+# workflow log (compatible with Python configparser)
+
+[workflow]
+host: offline-fe1
+platform: Linux-4.18.0-553.58.1.el8_10.x86_64-x86_64-with-glibc2.28
+cwd: /gpfs/offline1/visitors/micromax/20251850/20260513/dzabelsk/TR_ECH_comb/ech_laser_2h
+prog: /sw/pkg/presto/e/14.1/software/CCP4/9.0.011-foss-2023a-SHELX-ARP-8.0/ccp4-9/lib/python3.9/site-packages/dimple/__main__.py
+args:
+ ech-laser_2h.mtz
+ /data/visitors/micromax/20240701/20241015/dzabelsk/ech_prefin.pdb
+ dimple_processing
+ --hklout=ech-laser_2h_dimple.mtz
+ --xyzout=ech-laser_2h_dimple.pdb
+output_dir: dimple_processing
+CCP4: /sw/pkg/presto/e/14.1/software/CCP4/9.0.011-foss-2023a-SHELX-ARP-8.0/ccp4-9
+CCP4_SCR: /tmp
+version: 2.6.2
+#      ### Dimple v2.6.2. Problems and suggestions: ccp4.github.io/dimple ###
+# 
+# MTZ (1.8A)            P 3 2 1      (83.43, 83.43, 90.21,  90, 90, 120.00)
+# 8007944a8271a45579405724ce46889a /data/visitors/micromax/20240701/20241015/dzabelsk/ech_prefin.pdb
+data_file: ../ech-laser_2h.mtz
+pdb_files: ["/data/visitors/micromax/20240701/20241015/dzabelsk/ech_prefin.pdb"]
+# 
+# ech_prefin.pdb        P 32 2 1     (83.50, 83.50, 90.26,  90, 90, 120.00)
+
+[rwcontents]
+start_time: 2026-05-29 12:44:34
+input: end
+prog: /sw/pkg/presto/e/14.1/software/CCP4/9.0.011-foss-2023a-SHELX-ARP-8.0/ccp4-9/bin/rwcontents
+args: XYZIN ini.pdb
+end_time: 2026-05-29 12:44:34
+info: 6 x 35kDa (+ 3kDa het) in 545nm3, 53% solvent
+stdout: 01-rwcontents.log
+aa_count: 324
+water_count: 186.48
+volume: 545003.562
+weight: 34881.77
+total_weight: 38241.266
+Vm: 2.6
+solvent_percent: 52.69230769230769
+num_mol: 6
+
+[pointless]
+start_time: 2026-05-29 12:44:34
+input: TOLERANCE 5
+  end
+prog: /sw/pkg/presto/e/14.1/software/CCP4/9.0.011-foss-2023a-SHELX-ARP-8.0/ccp4-9/bin/pointless
+args: HKLIN ../ech-laser_2h.mtz HKLOUT reindexed.mtz XYZIN ini.pdb
+end_time: 2026-05-29 12:44:35
+info: resol. 1.80 A   #refl: 34163
+stdout: 02-pointless.log
+resol: 1.8
+refl_ref: 34236
+alt_reindex: [{"op": "[-h,-k,l]", "cc": 0.782, "cell_deviat": 0.06}, {"op": "[h,k,l]", "cc": 0.051, "cell_deviat": 0.06}]
+output_cell: (83.43, 83.43, 90.21, 90.0, 90.0, 120.0)
+refl_out: 34163
+# 
+#     [-h,-k,l]  CC: 0.782    cell diff: 0.1A
+# 
+#     [h,k,l]    CC: 0.051    cell diff: 0.1A
+# 
+# reindexed MTZ         P 32 2 1     (83.43, 83.43, 90.21,  90, 90, 120.00)
+
+[truncate]
+start_time: 2026-05-29 12:44:35
+input: labin IMEAN=I SIGIMEAN=SIGI
+  labout F=F SIGF=SIGF
+  NOHARVEST
+  end
+prog: /sw/pkg/presto/e/14.1/software/CCP4/9.0.011-foss-2023a-SHELX-ARP-8.0/ccp4-9/bin/truncate
+args: HKLIN reindexed.mtz HKLOUT amplit.mtz
+end_time: 2026-05-29 12:44:36
+info: B=42.1
+stdout: 03-truncate.log
+B-factor: 42.11
+# 
+# Rigid-body refinement with resolution 3.5 A, 10 cycles.
+#  0.6 waters/aa.
+
+[refmac5 rigid]
+start_time: 2026-05-29 12:44:36
+input: labin FP=F SIGFP=SIGF
+  refinement type rigidbody resolution 15 3.5
+  rigidbody ncycle 10
+  end
+prog: /sw/pkg/presto/e/14.1/software/CCP4/9.0.011-foss-2023a-SHELX-ARP-8.0/ccp4-9/bin/refmac5
+args: HKLIN amplit.mtz HKLOUT refmacRB.mtz XYZIN ini.pdb XYZOUT refmacRB.pdb
+end_time: 2026-05-29 12:44:42
+info: 10/10   R  0.1907  ->  0.1872
+stdout: 04-refmac5_rigid.log
+ncyc: 10
+cycle: 10
+iter_overall_r: [0.1907, 0.1876, 0.1872, 0.1871, 0.187, 0.187, 0.187, 0.1871, 0.1871, 0.1872, 0.1872]
+overall_r: 0.1872
+ini_overall_r: 0.1907
+# 
+# No MR for R < 0.4.
+# 
+# Generate free-R flags
+#  (repeatably)
+
+[unique]
+start_time: 2026-05-29 12:44:42
+input: cell 83.5 83.5 90.26 90 90 120
+  symmetry 'P 3 2 1'
+  resolution 1.000
+  labout F=F_UNIQUE SIGF=SIGF_UNIQUE
+  end
+prog: /sw/pkg/presto/e/14.1/software/CCP4/9.0.011-foss-2023a-SHELX-ARP-8.0/ccp4-9/bin/unique
+args: HKLOUT unique.mtz
+end_time: 2026-05-29 12:44:42
+stdout: 05-unique.log
+
+[freerflag]
+start_time: 2026-05-29 12:44:42
+input: end
+prog: /sw/pkg/presto/e/14.1/software/CCP4/9.0.011-foss-2023a-SHELX-ARP-8.0/ccp4-9/bin/freerflag
+args: HKLIN unique.mtz HKLOUT free.mtz
+end_time: 2026-05-29 12:44:43
+stdout: 06-freerflag.log
+
+[cad]
+start_time: 2026-05-29 12:44:43
+input: labin file 1 E1=I E2=SIGI E3=F E4=SIGF
+  labin file 2 E1=FreeR_flag
+  sysab_keep
+  reso overall 1000.0 1.79949
+  end
+prog: /sw/pkg/presto/e/14.1/software/CCP4/9.0.011-foss-2023a-SHELX-ARP-8.0/ccp4-9/bin/cad
+args: HKLIN1 amplit.mtz HKLIN2 free.mtz HKLOUT prepared.mtz
+end_time: 2026-05-29 12:44:43
+info: #refl  34193 -> 34193
+stdout: 07-cad.log
+refl_in1: 34193
+refl_out: 34193
+# 
+# Restrained refinement, 4+8 cycles.
+
+[refmac5 jelly]
+start_time: 2026-05-29 12:44:44
+input: labin FP=F SIGFP=SIGF FREE=FreeR_flag
+  make newligand continue
+  refinement type restrained
+  weight auto
+  ridge distance sigma 0.01
+  make hydrogen no
+  ncycle 4
+  end
+prog: /sw/pkg/presto/e/14.1/software/CCP4/9.0.011-foss-2023a-SHELX-ARP-8.0/ccp4-9/bin/refmac5
+args: HKLIN prepared.mtz HKLOUT jelly.mtz XYZIN refmacRB.pdb XYZOUT jelly.pdb
+end_time: 2026-05-29 12:45:03
+info:  4/4   R/Rfree  0.2148/0.2199  ->  0.1858/0.2089
+stdout: 08-refmac5_jelly.log
+ncyc: 4
+cycle: 4
+iter_overall_r: [0.2148, 0.1997, 0.1925, 0.1884, 0.1858]
+overall_r: 0.1858
+ini_overall_r: 0.2148
+free_r: 0.2089
+ini_free_r: 0.2199
+iter_free_r: [0.2199, 0.2134, 0.2105, 0.2098, 0.2089]
+rmsBOND: [0.016, 0.0114, 0.0108, 0.0106, 0.0105]
+rmsANGL: [1.714, 1.694, 1.718, 1.739, 1.756]
+rmsCHIRAL: [0.085, 0.09, 0.098, 0.104, 0.109]
+# 
+#     RMS:   bond 0.016 -> 0.011   angle 1.71 -> 1.76   chiral 0.09 -> 0.11
+
+[refmac5 restr]
+start_time: 2026-05-29 12:45:03
+input: labin FP=F SIGFP=SIGF FREE=FreeR_flag
+  make newligand continue
+  refinement type restrained
+  weight auto
+  ncycle 8
+  end
+prog: /sw/pkg/presto/e/14.1/software/CCP4/9.0.011-foss-2023a-SHELX-ARP-8.0/ccp4-9/bin/refmac5
+args: HKLIN prepared.mtz HKLOUT ech-laser_2h_dimple.mtz XYZIN jelly.pdb XYZOUT ech-laser_2h_dimple.pdb
+end_time: 2026-05-29 12:45:42
+info:  8/8   R/Rfree  0.1800/0.2052  ->  0.1704/0.2109
+stdout: 09-refmac5_restr.log
+ncyc: 8
+cycle: 8
+iter_overall_r: [0.18, 0.1756, 0.173, 0.1719, 0.1712, 0.1708, 0.1706, 0.1706, 0.1704]
+overall_r: 0.1704
+ini_overall_r: 0.18
+free_r: 0.2109
+ini_free_r: 0.2052
+iter_free_r: [0.2052, 0.2061, 0.2062, 0.207, 0.2082, 0.2092, 0.2099, 0.2103, 0.2109]
+rmsBOND: [0.0105, 0.0092, 0.0092, 0.0091, 0.009, 0.0089, 0.0088, 0.0087, 0.0086]
+rmsANGL: [1.756, 1.665, 1.673, 1.686, 1.694, 1.7, 1.7, 1.701, 1.7]
+rmsCHIRAL: [0.109, 0.098, 0.097, 0.096, 0.096, 0.095, 0.095, 0.094, 0.094]
+# 
+#     RMS:   bond 0.011 -> 0.009   angle 1.76 -> 1.70   chiral 0.11 -> 0.09
+
+[find-blobs]
+start_time: 2026-05-29 12:45:42
+prog: /sw/pkg/presto/e/14.1/software/CCP4/9.0.011-foss-2023a-SHELX-ARP-8.0/ccp4-9/bin/find-blobs
+args: -c -s0.8 ech-laser_2h_dimple.mtz ech-laser_2h_dimple.pdb
+end_time: 2026-05-29 12:45:43
+info: searching with cut-off: 0.164 e/A^3 (0.8 sigma)
+stdout: 10-find-blobs.log
+blobs: []
+scores: []
+density_info: Density std.dev: 0.206, cut-off: 0.164 e/A^3 (0.8 sigma)
+center: (-22.08, 7.653, 1.055)
+# 
+# Unmodelled blobs not found.
+# 
+# To see it in Coot run /gpfs/offline1/visitors/micromax/20251850/20260513/dzabelsk/TR_ECH_comb/ech_laser_2h/dimple_processing/coot.sh
+# 

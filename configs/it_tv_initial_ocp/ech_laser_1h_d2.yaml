@@ -1,0 +1,29 @@
+general:
+  name_machine: ech_laser_1h_d2
+  name_human: ech_laser_1h_d2
+  output_folder: results/it_tv_ocp
+  plot_folder: results/it_tv_ocp/ech_laser_1h_d2
+  high_resolution_limit: 1.83
+  comparison_type: triggered
+input_files:
+  map_dark: results/it_tv_ocp/ech_laser_1h_d2/ech_laser_1h_d2_dark_finite.mtz
+  map_triggered: results/it_tv_ocp/ech_laser_1h_d2/ech_laser_1h_d2_triggered_finite.mtz
+  pdb_dark: results/it_tv_ocp/ech_laser_1h_d2/ech_laser_1h_d2_dark_cell.pdb
+  impose_dark_phases: true
+  columns_are_ints: false
+  columns_dark:
+    amplitude_column: F
+    phase_column: MODEL
+    uncertainty_column: SIGF
+  columns_triggered:
+    amplitude_column: F
+    phase_column: MODEL
+    uncertainty_column: SIGF
+map_processing:
+  diffmap_type: it_tv
+  dark_mean_correction: true
+  simple_dark_correction: true
+  calculate_diffmap_before_f000: false
+plot:
+  show_plot: false
+  save_to_file: true

@@ -1,0 +1,16 @@
+name: tv-extrapolation
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip
+  - pyyaml
+  - pandas
+  - matplotlib
+  - pip:
+      # v0.4.2 is currently available from GitHub before PyPI.
+      - git+https://github.com/rs-station/meteor.git@v0.4.2
+      - pydantic-settings
+      - typer
+      - pyqt6
+      - jupyterlab

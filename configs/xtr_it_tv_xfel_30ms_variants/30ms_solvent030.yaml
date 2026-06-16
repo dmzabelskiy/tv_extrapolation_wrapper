@@ -1,0 +1,28 @@
+general:
+  name_machine: 30ms
+  name_human: 30ms solvent 0.30
+  output_folder: results/it_tv_extrapolated_maps
+  plot_folder: results/it_tv_extrapolated_maps/30ms
+  high_resolution_limit: 1.97
+  comparison_type: triggered
+input_files:
+  map_dark: initial/30ms/ground.mtz
+  map_triggered: initial/30ms/30ms.mtz
+  pdb_dark: initial/30ms/olpvr1_xfel_dark_refine_007.pdb
+  impose_dark_phases: true
+  columns_are_ints: true
+  columns_dark_ints:
+    ints_column: I
+    int_uncertainty_column: SIGI
+  columns_triggered_ints:
+    ints_column: I
+    int_uncertainty_column: SIGI
+map_processing:
+  diffmap_type: it_tv
+  dark_mean_correction: true
+  simple_dark_correction: true
+  calculate_diffmap_before_f000: false
+plot:
+  show_plot: false
+  save_to_file: true
+  solvent_density: 0.30

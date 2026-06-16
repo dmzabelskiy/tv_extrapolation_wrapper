@@ -1,0 +1,10 @@
+condition,dark_mtz,triggered_mtz,pdb_dark,high_resolution_limit,config
+10ns,initial/10ns/ground.mtz,initial/10ns/10ns.mtz,initial/10ns/OLPVR1_eufel_newsg_dark_refine_011.pdb,2.1,configs/xtr_it_tv_xfel/10ns.yaml
+5us,initial/5us/ground.mtz,initial/5us/5us.mtz,initial/5us/olpvr1_xfel_dark_refine_007.pdb,1.8,configs/xtr_it_tv_xfel/5us.yaml
+10ms,initial/10ms/ground.mtz,initial/10ms/10ms.mtz,initial/10ms/OLPVR1_eufel_newsg_dark_refine_011.pdb,2.0,configs/xtr_it_tv_xfel/10ms.yaml
+esrf_5ms,initial/esrf_5ms/ground.mtz,initial/esrf_5ms/5ms_0-37p5ms.mtz,initial/esrf_5ms/OLPVR1_id30a3_ground_refine_8.pdb,2.2,configs/xtr_it_tv_xfel/esrf_5ms.yaml
+esrf_5ms_2,initial/esrf_5ms_2/ground.mtz,initial/esrf_5ms_2/5ms_37p5-75ms.mtz,initial/esrf_5ms_2/OLPVR1_id30a3_ground_refine_8.pdb,2.2,configs/xtr_it_tv_xfel/esrf_5ms_2.yaml
+esrf_75ms,initial/esrf_75ms/ground.mtz,initial/esrf_75ms/75ms_0-37p5ms.mtz,initial/esrf_75ms/OLPVR1_id30a3_ground_refine_8.pdb,2.3,configs/xtr_it_tv_xfel/esrf_75ms.yaml
+low_ph,initial/low_ph/ground.mtz,initial/low_ph/low.mtz,initial/low_ph/olpvr1_high_res_refine_72.pdb,1.13,configs/xtr_it_tv_xfel/low_ph.yaml
+trapping_1,initial/trapping_1/ground.mtz,initial/trapping_1/6_CD364A_473nm_RT_5sec_5mWt.mtz,initial/trapping_1/olpvr1_high_res_refine_72.pdb,1.132,configs/xtr_it_tv_xfel/trapping_1.yaml
+trapping_2,initial/trapping_2/10_CD364A_ground.mtz,initial/trapping_2/6_CD364A_473nm_RT_5sec_5mWt.mtz,initial/trapping_2/overall_best_refmac0_refmac0-coot-13_refine_075.pdb,1.132,configs/xtr_it_tv_xfel/trapping_2.yaml

@@ -1,0 +1,60 @@
+=== check_hkl Completeness Statistics ===
+Command: check_hkl ech-laser_2h.hkl -p /data/visitors/micromax/20251850/20260513/dzabelsk/TR_ECH/cell_ech.cell --shell-file=ech-laser_2h_completeness.dat --nshells=15 --highres=1.8
+Using symmetry from reflection file: -3m1_H
+Discarded 0 reflections (out of 99890) with I/sigma(I) < -inf
+65727 reflections rejected because they were outside the resolution range.
+1/d goes from 0.261359 to 5.555525 nm^-1
+Overall values within specified resolution range:
+28437962 measurements in total.
+34163 reflections in total.
+34161 reflections possible.
+Overall <snr> = 7.612302
+Overall redundancy = 832.419928 measurements/unique reflection
+Overall completeness = 100.005855 %
+Resolution shell information written to ech-laser_2h_completeness.dat.
+----------------------------------------
+=== compare_hkl Rsplit Statistics ===
+Command: compare_hkl ech-laser_2h.hkl1 ech-laser_2h.hkl2 -p /data/visitors/micromax/20251850/20260513/dzabelsk/TR_ECH/cell_ech.cell --shell-file=ech-laser_2h_Rsplit.dat --fom=Rsplit --nshells=15 --highres=1.8
+Using symmetry from reflection files: -3m1_H
+ech-laser_2h.hkl1: 98202 reflections, resolution range 38.26 to 1.24 Angstroms (0.26136 to 8.05263 nm^-1).
+ech-laser_2h.hkl2: 98204 reflections, resolution range 38.26 to 1.24 Angstroms (0.26136 to 8.05247 nm^-1).
+62855 reflection pairs rejected because either or both versions were outside the resolution range.
+34163 reflection pairs accepted.
+Accepted resolution range: 0.261359 to 5.555525 nm^-1 (38.26 to 1.80 Angstroms).
+Fixed resolution range: 0.261359 to 5.555556 nm^-1 (38.26 to 1.80 Angstroms).
+Relative scale factor = 0.996063, relative B factor = -0.026084 A^2
+A scale factor greater than 1 means that the second reflection list is weaker than the first.
+A positive relative B factor means that the second reflection list falls off with resolution more quickly than the first.
+Overall Rsplit = 8.70 %
+----------------------------------------
+=== compare_hkl CChalf Statistics ===
+Command: compare_hkl ech-laser_2h.hkl1 ech-laser_2h.hkl2 -p /data/visitors/micromax/20251850/20260513/dzabelsk/TR_ECH/cell_ech.cell --shell-file=ech-laser_2h_CChalf.dat --fom=CC --nshells=15 --highres=1.8
+Using symmetry from reflection files: -3m1_H
+ech-laser_2h.hkl1: 98202 reflections, resolution range 38.26 to 1.24 Angstroms (0.26136 to 8.05263 nm^-1).
+ech-laser_2h.hkl2: 98204 reflections, resolution range 38.26 to 1.24 Angstroms (0.26136 to 8.05247 nm^-1).
+62855 reflection pairs rejected because either or both versions were outside the resolution range.
+34163 reflection pairs accepted.
+Accepted resolution range: 0.261359 to 5.555525 nm^-1 (38.26 to 1.80 Angstroms).
+Fixed resolution range: 0.261359 to 5.555556 nm^-1 (38.26 to 1.80 Angstroms).
+Relative scale factor = 0.996063, relative B factor = -0.026084 A^2
+A scale factor greater than 1 means that the second reflection list is weaker than the first.
+A positive relative B factor means that the second reflection list falls off with resolution more quickly than the first.
+Overall CC = 0.9899784
+----------------------------------------
+=== compare_hkl CCstar Statistics ===
+Command: compare_hkl ech-laser_2h.hkl1 ech-laser_2h.hkl2 -p /data/visitors/micromax/20251850/20260513/dzabelsk/TR_ECH/cell_ech.cell --shell-file=ech-laser_2h_CCstar.dat --fom=CCstar --nshells=15 --highres=1.8
+Using symmetry from reflection files: -3m1_H
+ech-laser_2h.hkl1: 98202 reflections, resolution range 38.26 to 1.24 Angstroms (0.26136 to 8.05263 nm^-1).
+ech-laser_2h.hkl2: 98204 reflections, resolution range 38.26 to 1.24 Angstroms (0.26136 to 8.05247 nm^-1).
+62855 reflection pairs rejected because either or both versions were outside the resolution range.
+34163 reflection pairs accepted.
+Accepted resolution range: 0.261359 to 5.555525 nm^-1 (38.26 to 1.80 Angstroms).
+Fixed resolution range: 0.261359 to 5.555556 nm^-1 (38.26 to 1.80 Angstroms).
+Relative scale factor = 0.996063, relative B factor = -0.026084 A^2
+A scale factor greater than 1 means that the second reflection list is weaker than the first.
+A positive relative B factor means that the second reflection list falls off with resolution more quickly than the first.
+Overall CC* = 0.9974788
+----------------------------------------
+=== get_hkl Conversion to MTZ ===
+Command: get_hkl -i ech-laser_2h.hkl -o ech-laser_2h.mtz --output-format=mtz -p /data/visitors/micromax/20251850/20260513/dzabelsk/TR_ECH/cell_ech.cell --highres=1.8
+----------------------------------------

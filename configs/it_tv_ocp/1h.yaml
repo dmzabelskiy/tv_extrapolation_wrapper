@@ -1,0 +1,29 @@
+general:
+  name_machine: 1h
+  name_human: 1h light
+  output_folder: results/it_tv_ocp
+  plot_folder: results/it_tv_ocp/1h
+  high_resolution_limit: 1.75
+  comparison_type: triggered
+input_files:
+  map_dark: results/it_tv_ocp/1h/1h_dark_finite_amplitudes.mtz
+  map_triggered: results/it_tv_ocp/1h/1h_triggered_finite_amplitudes.mtz
+  pdb_dark: results/it_tv_ocp/dark_ech_reference_mtz_cell.pdb
+  impose_dark_phases: true
+  columns_are_ints: false
+  columns_dark:
+    amplitude_column: F
+    phase_column: MODEL
+    uncertainty_column: SIGF
+  columns_triggered:
+    amplitude_column: F
+    phase_column: MODEL
+    uncertainty_column: SIGF
+map_processing:
+  diffmap_type: it_tv
+  dark_mean_correction: true
+  simple_dark_correction: true
+  calculate_diffmap_before_f000: false
+plot:
+  show_plot: false
+  save_to_file: true

@@ -1,0 +1,29 @@
+general:
+  name_machine: ocp_filtered
+  name_human: OCP filtered laser
+  output_folder: results/it_tv_ocp
+  plot_folder: results/it_tv_ocp/ocp_filtered
+  high_resolution_limit: 1.8
+  comparison_type: triggered
+input_files:
+  map_dark: results/it_tv_ocp/ocp_filtered/ocp_filtered_dark_finite.mtz
+  map_triggered: results/it_tv_ocp/ocp_filtered/ocp_filtered_triggered_finite.mtz
+  pdb_dark: initial/ocp_filtered/OCP_ECH_refine_002.pdb
+  impose_dark_phases: true
+  columns_are_ints: false
+  columns_dark:
+    amplitude_column: F
+    phase_column: MODEL
+    uncertainty_column: SIGF
+  columns_triggered:
+    amplitude_column: F
+    phase_column: MODEL
+    uncertainty_column: SIGF
+map_processing:
+  diffmap_type: it_tv
+  dark_mean_correction: true
+  simple_dark_correction: true
+  calculate_diffmap_before_f000: false
+plot:
+  show_plot: false
+  save_to_file: true

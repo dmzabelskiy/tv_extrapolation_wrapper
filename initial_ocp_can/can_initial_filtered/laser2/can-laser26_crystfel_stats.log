@@ -1,0 +1,60 @@
+=== check_hkl Completeness Statistics ===
+Command: check_hkl can-laser26.hkl -p /data/visitors/micromax/20251850/20260513/dzabelsk/TR_CAN_comb/can_cell.cell --shell-file=can-laser26_completeness.dat --nshells=15 --highres=1.8
+Using symmetry from reflection file: -3m1_H
+Discarded 0 reflections (out of 98405) with I/sigma(I) < -inf
+64379 reflections rejected because they were outside the resolution range.
+1/d goes from 0.261554 to 5.555527 nm^-1
+Overall values within specified resolution range:
+17137713 measurements in total.
+34026 reflections in total.
+34024 reflections possible.
+Overall <snr> = 6.408459
+Overall redundancy = 503.665227 measurements/unique reflection
+Overall completeness = 100.005878 %
+Resolution shell information written to can-laser26_completeness.dat.
+----------------------------------------
+=== compare_hkl Rsplit Statistics ===
+Command: compare_hkl can-laser26.hkl1 can-laser26.hkl2 -p /data/visitors/micromax/20251850/20260513/dzabelsk/TR_CAN_comb/can_cell.cell --shell-file=can-laser26_Rsplit.dat --fom=Rsplit --nshells=15 --highres=1.8
+Using symmetry from reflection files: -3m1_H
+can-laser26.hkl1: 96305 reflections, resolution range 38.23 to 1.24 Angstroms (0.26155 to 8.04894 nm^-1).
+can-laser26.hkl2: 96239 reflections, resolution range 38.23 to 1.24 Angstroms (0.26155 to 8.04185 nm^-1).
+60798 reflection pairs rejected because either or both versions were outside the resolution range.
+34026 reflection pairs accepted.
+Accepted resolution range: 0.261554 to 5.555527 nm^-1 (38.23 to 1.80 Angstroms).
+Fixed resolution range: 0.261554 to 5.555556 nm^-1 (38.23 to 1.80 Angstroms).
+Relative scale factor = 0.998993, relative B factor = 0.118103 A^2
+A scale factor greater than 1 means that the second reflection list is weaker than the first.
+A positive relative B factor means that the second reflection list falls off with resolution more quickly than the first.
+Overall Rsplit = 11.26 %
+----------------------------------------
+=== compare_hkl CChalf Statistics ===
+Command: compare_hkl can-laser26.hkl1 can-laser26.hkl2 -p /data/visitors/micromax/20251850/20260513/dzabelsk/TR_CAN_comb/can_cell.cell --shell-file=can-laser26_CChalf.dat --fom=CC --nshells=15 --highres=1.8
+Using symmetry from reflection files: -3m1_H
+can-laser26.hkl1: 96305 reflections, resolution range 38.23 to 1.24 Angstroms (0.26155 to 8.04894 nm^-1).
+can-laser26.hkl2: 96239 reflections, resolution range 38.23 to 1.24 Angstroms (0.26155 to 8.04185 nm^-1).
+60798 reflection pairs rejected because either or both versions were outside the resolution range.
+34026 reflection pairs accepted.
+Accepted resolution range: 0.261554 to 5.555527 nm^-1 (38.23 to 1.80 Angstroms).
+Fixed resolution range: 0.261554 to 5.555556 nm^-1 (38.23 to 1.80 Angstroms).
+Relative scale factor = 0.998993, relative B factor = 0.118103 A^2
+A scale factor greater than 1 means that the second reflection list is weaker than the first.
+A positive relative B factor means that the second reflection list falls off with resolution more quickly than the first.
+Overall CC = 0.9848304
+----------------------------------------
+=== compare_hkl CCstar Statistics ===
+Command: compare_hkl can-laser26.hkl1 can-laser26.hkl2 -p /data/visitors/micromax/20251850/20260513/dzabelsk/TR_CAN_comb/can_cell.cell --shell-file=can-laser26_CCstar.dat --fom=CCstar --nshells=15 --highres=1.8
+Using symmetry from reflection files: -3m1_H
+can-laser26.hkl1: 96305 reflections, resolution range 38.23 to 1.24 Angstroms (0.26155 to 8.04894 nm^-1).
+can-laser26.hkl2: 96239 reflections, resolution range 38.23 to 1.24 Angstroms (0.26155 to 8.04185 nm^-1).
+60798 reflection pairs rejected because either or both versions were outside the resolution range.
+34026 reflection pairs accepted.
+Accepted resolution range: 0.261554 to 5.555527 nm^-1 (38.23 to 1.80 Angstroms).
+Fixed resolution range: 0.261554 to 5.555556 nm^-1 (38.23 to 1.80 Angstroms).
+Relative scale factor = 0.998993, relative B factor = 0.118103 A^2
+A scale factor greater than 1 means that the second reflection list is weaker than the first.
+A positive relative B factor means that the second reflection list falls off with resolution more quickly than the first.
+Overall CC* = 0.9961713
+----------------------------------------
+=== get_hkl Conversion to MTZ ===
+Command: get_hkl -i can-laser26.hkl -o can-laser26.mtz --output-format=mtz -p /data/visitors/micromax/20251850/20260513/dzabelsk/TR_CAN_comb/can_cell.cell --highres=1.8
+----------------------------------------
