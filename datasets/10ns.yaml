@@ -1,0 +1,12 @@
+name: 10ns
+dark_mtz: initial/10ns/ground.mtz
+triggered_mtz: initial/10ns/10ns.mtz
+pdb_dark: initial/10ns/OLPVR1_eufel_newsg_dark_refine_011.pdb
+resolution_limit: 2.1
+columns:
+  dark: {kind: intensity, amplitude_or_intensity: I, sigma: SIGI}
+  triggered: {kind: intensity, amplitude_or_intensity: I, sigma: SIGI}
+rewrite_pdb_cell: false
+estimation: {}
+masking: {}
+output_dir: results/it_tv_pipeline
