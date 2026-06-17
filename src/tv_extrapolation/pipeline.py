@@ -3,9 +3,12 @@ from __future__ import annotations
 import contextlib
 import hashlib
 import math
+import shutil
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
+import gemmi
 import matplotlib.pyplot as plt
 import numpy as np
 import reciprocalspaceship as rs
@@ -115,6 +118,45 @@ def _filter_nonfinite(map_coefficients: Map) -> Map:
 def _condition_seed(condition: str, base_seed: int = 20260520) -> int:
     digest = hashlib.sha256(condition.encode("utf-8")).digest()
     return (base_seed + int.from_bytes(digest[:4], "little")) % (2**32)
+
+
+def _rewrite_pdb_cell(pdb_path: Path, dark_mtz: Path, condition_dir: Path) -> Path:
+    """Copy the unit cell from the dark MTZ into the PDB CRYST1 record."""
+    mtz = gemmi.read_mtz_file(str(dark_mtz))
+    structure = gemmi.read_structure(str(pdb_path))
+    structure.cell = mtz.cell
+    if mtz.spacegroup:
+        structure.spacegroup_hm = mtz.spacegroup.hm
+    out = condition_dir / f"{pdb_path.stem}_cell_corrected.pdb"
+    structure.write_pdb(str(out))
+    return out
+
+
+def _run_phenix_rigid_body(pdb_path: Path, dark_mtz: Path, condition_dir: Path) -> Path:
+    """Run phenix.refine rigid-body to re-seat the model in the corrected cell."""
+    if not shutil.which("phenix.refine"):
+        raise RuntimeError(
+            "phenix.refine not found in PATH; cannot use --phenix-refine-cell"
+        )
+    prefix = condition_dir / "cell_refine"
+    cmd = [
+        "phenix.refine",
+        str(dark_mtz),
+        str(pdb_path),
+        "refinement.main.strategy=rigid_body",
+        f"output.prefix={prefix}",
+        "refinement.main.number_of_macro_cycles=3",
+        "refinement.main.nproc=auto",
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True, cwd=str(condition_dir))
+    if result.returncode != 0:
+        raise RuntimeError(f"phenix.refine failed:\n{result.stderr[-2000:]}")
+    pdbs = sorted(condition_dir.glob("cell_refine_*.pdb"))
+    if not pdbs:
+        raise RuntimeError(
+            f"phenix.refine completed but no output PDB found under {condition_dir}"
+        )
+    return pdbs[-1]
 
 
 def _make_phenix_ready(extrapolated_mtz: Path, condition: str, condition_dir: Path) -> Path:
@@ -229,6 +271,12 @@ class EstimationResult:
 def run(config: DatasetConfig) -> EstimationResult:
     condition_dir = config.output_dir / config.name
     condition_dir.mkdir(parents=True, exist_ok=True)
+
+    if config.rewrite_pdb_cell or config.phenix_refine_cell:
+        corrected_pdb = _rewrite_pdb_cell(config.pdb_dark, config.dark_mtz, condition_dir)
+        if config.phenix_refine_cell:
+            corrected_pdb = _run_phenix_rigid_body(corrected_pdb, config.dark_mtz, condition_dir)
+        config = config.model_copy(update={"pdb_dark": corrected_pdb})
 
     settings = Settings(**config.to_xtr_estimator_settings_dict())
     resolved = dump_config(settings)

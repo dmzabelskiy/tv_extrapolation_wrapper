@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal
 
 import yaml
 from pydantic import BaseModel, Field
@@ -21,6 +21,7 @@ class DatasetConfig(BaseModel):
     resolution_limit: float
     columns: dict[str, ColumnSpec]
     rewrite_pdb_cell: bool = False
+    phenix_refine_cell: bool = False
     finite_filter: bool = False
     scaling_loss: Literal["huber", "linear", "huber_safe"] = "huber"
     estimation: dict = Field(default_factory=dict)
@@ -32,6 +33,57 @@ class DatasetConfig(BaseModel):
         with open(path) as handle:
             payload = yaml.safe_load(handle)
         return cls(**payload)
+
+    @classmethod
+    def from_files(
+        cls,
+        dark_mtz: Path | str,
+        triggered_mtz: Path | str,
+        pdb_dark: Path | str,
+        *,
+        name: str | None = None,
+        resolution_limit: float | None = None,
+        output_dir: Path | str = Path("results"),
+        scaling_loss: Literal["huber", "linear", "huber_safe"] = "huber",
+        finite_filter: bool = False,
+        rewrite_pdb_cell: bool = False,
+        phenix_refine_cell: bool = False,
+    ) -> "DatasetConfig":
+        """Build a config by auto-detecting columns and resolution from the MTZ files.
+
+        Column types (intensity vs amplitude) are inferred from MTZ column-type
+        letters; amplitudes are preferred when both are present.  Resolution
+        defaults to the coarser of the two datasets.  All keyword arguments
+        can be used to override the auto-detected or default values.
+        """
+        from .mtz_inspect import detect_column_spec, detect_resolution_limit
+
+        dark_mtz = Path(dark_mtz)
+        triggered_mtz = Path(triggered_mtz)
+        pdb_dark = Path(pdb_dark)
+
+        dark_col = detect_column_spec(dark_mtz)
+        triggered_col = detect_column_spec(triggered_mtz)
+
+        if resolution_limit is None:
+            resolution_limit = detect_resolution_limit(dark_mtz, triggered_mtz)
+
+        if name is None:
+            name = triggered_mtz.stem
+
+        return cls(
+            name=name,
+            dark_mtz=dark_mtz,
+            triggered_mtz=triggered_mtz,
+            pdb_dark=pdb_dark,
+            resolution_limit=resolution_limit,
+            columns={"dark": dark_col, "triggered": triggered_col},
+            output_dir=Path(output_dir),
+            scaling_loss=scaling_loss,
+            finite_filter=finite_filter,
+            rewrite_pdb_cell=rewrite_pdb_cell,
+            phenix_refine_cell=phenix_refine_cell,
+        )
 
     def to_xtr_estimator_settings_dict(self) -> dict:
         dark_col = self.columns["dark"]
