@@ -1,0 +1,14 @@
+name: esrf_75ms
+dark_mtz: initial/olpvr1_esrf/esrf_75ms/ground.mtz
+triggered_mtz: initial/olpvr1_esrf/esrf_75ms/75ms_0-37p5ms.mtz
+pdb_dark: initial/olpvr1_esrf/esrf_75ms/OLPVR1_id30a3_ground_refine_8.pdb
+resolution_limit: 2.3
+columns:
+  dark: {kind: amplitude, amplitude_or_intensity: F, sigma: SIGF}
+  triggered: {kind: amplitude, amplitude_or_intensity: F, sigma: SIGF}
+finite_filter: true
+scaling_loss: huber_safe
+rewrite_pdb_cell: false
+estimation: {}
+masking: {}
+output_dir: results/esrf

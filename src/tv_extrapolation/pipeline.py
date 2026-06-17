@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+import contextlib
+import hashlib
 import math
 from dataclasses import dataclass
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
+import reciprocalspaceship as rs
+from meteor import scale as meteor_scale
 from meteor.rsmap import Map
 from xtr_estimator.configuration import Settings, dump_config
 from xtr_estimator.estimation import plot_extrapolation_estimate
@@ -39,6 +44,58 @@ def _install_resolution_check() -> None:
 _install_resolution_check()
 
 
+@contextlib.contextmanager
+def _linear_scaling_ctx():
+    original = processing.scale_maps
+
+    def _linear(*, reference_map, map_to_scale, **kwargs):
+        kwargs["least_squares_loss"] = "linear"
+        return meteor_scale.scale_maps(reference_map=reference_map, map_to_scale=map_to_scale, **kwargs)
+
+    processing.scale_maps = _linear
+    try:
+        yield
+    finally:
+        processing.scale_maps = original
+
+
+@contextlib.contextmanager
+def _huber_safe_scaling_ctx():
+    """Patch scipy.optimize.least_squares to fix the variable-length residual crash in
+    meteor.scale.scale_maps.  That closure filters NaN residuals (removing them) so the
+    returned vector shrinks mid-optimization; scipy's Huber loss pre-allocates rho based
+    on the first call's size and then crashes on the size mismatch.
+
+    Fix: capture the initial residual size on the first call and pad all subsequent calls
+    with zeros to that size.  A zero residual contributes no gradient, which is equivalent
+    to treating the missing reflection as perfectly scaled — matching the intent of the
+    original NaN comment while keeping vector length fixed."""
+    import scipy.optimize as _scipy_opt
+    original_ls = _scipy_opt.least_squares
+
+    def _safe_ls(fun, x0, **kwargs):
+        initial_size: list[int | None] = [None]
+
+        def _fixed_size_fun(x):
+            r = fun(x)
+            if initial_size[0] is None:
+                initial_size[0] = len(r)
+            m = initial_size[0]
+            if len(r) < m:
+                padded = np.zeros(m, dtype=np.float64)
+                padded[:len(r)] = r
+                return padded
+            return r[:m]
+
+        return original_ls(_fixed_size_fun, x0, **kwargs)
+
+    _scipy_opt.least_squares = _safe_ls
+    try:
+        yield
+    finally:
+        _scipy_opt.least_squares = original_ls
+
+
 def _finite_stats(map_coefficients: Map) -> tuple[int, int]:
     sf = map_coefficients.to_structurefactor().to_numpy()
     finite = np.isfinite(sf.real) & np.isfinite(sf.imag)
@@ -47,6 +104,46 @@ def _finite_stats(map_coefficients: Map) -> tuple[int, int]:
 
 def _minimum_resolution(map_coefficients: Map) -> float:
     return float(map_coefficients.compute_dHKL().min())
+
+
+def _filter_nonfinite(map_coefficients: Map) -> Map:
+    sf = map_coefficients.to_structurefactor().to_numpy()
+    finite_mask = np.isfinite(sf.real) & np.isfinite(sf.imag)
+    return map_coefficients[finite_mask].copy()
+
+
+def _condition_seed(condition: str, base_seed: int = 20260520) -> int:
+    digest = hashlib.sha256(condition.encode("utf-8")).digest()
+    return (base_seed + int.from_bytes(digest[:4], "little")) % (2**32)
+
+
+def _make_phenix_ready(extrapolated_mtz: Path, condition: str, condition_dir: Path) -> Path:
+    ds = rs.read_mtz(str(extrapolated_mtz))
+    rng = np.random.default_rng(_condition_seed(condition))
+    n = len(ds)
+    flags = np.zeros(n, dtype=np.int32)
+    n_free = max(1, int(round(n * 0.05)))
+    flags[rng.choice(n, size=n_free, replace=False)] = 1
+
+    out = rs.DataSet(index=ds.index.copy())
+    out.cell = ds.cell
+    out.spacegroup = ds.spacegroup
+    f_vals = ds["F"].to_numpy(dtype=float)
+    phi_vals = ds["PHI"].to_numpy(dtype=float)
+    sigf_vals = ds["SIGF"].to_numpy(dtype=float)
+    out["FEXTRA"] = rs.DataSeries(f_vals, index=out.index, dtype=rs.StructureFactorAmplitudeDtype())
+    out["SIGFEXTRA"] = rs.DataSeries(sigf_vals, index=out.index, dtype=rs.StandardDeviationDtype())
+    out["FreeR_flag"] = rs.DataSeries(flags, index=out.index, dtype=rs.MTZIntDtype())
+    out["2FOFCWT"] = rs.DataSeries(f_vals, index=out.index, dtype=rs.StructureFactorAmplitudeDtype())
+    out["PH2FOFCWT"] = rs.DataSeries(phi_vals, index=out.index, dtype=rs.PhaseDtype())
+    out["FWT"] = rs.DataSeries(f_vals, index=out.index, dtype=rs.StructureFactorAmplitudeDtype())
+    out["PHWT"] = rs.DataSeries(phi_vals, index=out.index, dtype=rs.PhaseDtype())
+
+    phenix_dir = condition_dir / "phenix_ready"
+    phenix_dir.mkdir(parents=True, exist_ok=True)
+    target = phenix_dir / f"{condition}_it_tv_extrapolated_phenix_ready.mtz"
+    out.write_mtz(str(target))
+    return target
 
 
 def _align_reference_style_inputs(
@@ -102,6 +199,7 @@ class EstimationResult:
     diffmap_mtz: str
     extrapolated_mtz: str
     extrapolated_ccp4: str
+    phenix_ready_mtz: str = ""
     error: str = ""
 
     def as_row(self) -> dict:
@@ -123,6 +221,7 @@ class EstimationResult:
             "diffmap_mtz": self.diffmap_mtz,
             "extrapolated_mtz": self.extrapolated_mtz,
             "extrapolated_ccp4": self.extrapolated_ccp4,
+            "phenix_ready_mtz": self.phenix_ready_mtz,
             "error": self.error,
         }
 
@@ -134,41 +233,56 @@ def run(config: DatasetConfig) -> EstimationResult:
     settings = Settings(**config.to_xtr_estimator_settings_dict())
     resolved = dump_config(settings)
 
-    try:
-        unscaled_dark, unscaled_triggered = get_maps(resolved)
-        dark_finite, dark_nonfinite = _finite_stats(unscaled_dark)
-        triggered_finite, triggered_nonfinite = _finite_stats(unscaled_triggered)
-        unscaled_dark, unscaled_triggered = _align_reference_style_inputs(
-            unscaled_dark, unscaled_triggered, resolved
-        )
-        diffmap, map_dark, _map_triggered = prepare_maps(
-            unscaled_dark, unscaled_triggered, resolved
-        )
-        inclusion_mask = make_inclusion_mask(diffmap, map_dark, resolved)
-        _fig, _ax, prediction = plot_extrapolation_estimate(
-            diffmap, map_dark, inclusion_mask, resolved, compact=False
-        )
-        chi = float(prediction[0])
-        std = float(prediction[1])
-    except Exception as exc:
-        return EstimationResult(
-            condition=config.name,
-            status="error",
-            chi=None,
-            std=None,
-            extrapolation_factor=None,
-            dark_finite=0,
-            dark_nonfinite=0,
-            triggered_finite=0,
-            triggered_nonfinite=0,
-            diffmap_mtz="",
-            extrapolated_mtz="",
-            extrapolated_ccp4="",
-            error=f"{type(exc).__name__}: {exc}",
-        )
+    if config.scaling_loss == "linear":
+        scaling_ctx = _linear_scaling_ctx()
+    elif config.scaling_loss == "huber_safe":
+        scaling_ctx = _huber_safe_scaling_ctx()
+    else:
+        scaling_ctx = contextlib.nullcontext()
+    with scaling_ctx:
+        try:
+            unscaled_dark, unscaled_triggered = get_maps(resolved)
+            dark_finite, dark_nonfinite = _finite_stats(unscaled_dark)
+            triggered_finite, triggered_nonfinite = _finite_stats(unscaled_triggered)
+            if config.finite_filter:
+                unscaled_dark = _filter_nonfinite(unscaled_dark)
+                unscaled_triggered = _filter_nonfinite(unscaled_triggered)
+            unscaled_dark, unscaled_triggered = _align_reference_style_inputs(
+                unscaled_dark, unscaled_triggered, resolved
+            )
+            diffmap, map_dark, _map_triggered = prepare_maps(
+                unscaled_dark, unscaled_triggered, resolved
+            )
+            inclusion_mask = make_inclusion_mask(diffmap, map_dark, resolved)
+            fig, _ax, prediction = plot_extrapolation_estimate(
+                diffmap, map_dark, inclusion_mask, resolved, compact=False
+            )
+            chi = float(prediction[0])
+            std = float(prediction[1])
+            plot_path = condition_dir / f"{config.name}_extrapolation_estimate.png"
+            fig.savefig(plot_path)
+            plt.close(fig)
+        except Exception as exc:
+            return EstimationResult(
+                condition=config.name,
+                status="error",
+                chi=None,
+                std=None,
+                extrapolation_factor=None,
+                dark_finite=0,
+                dark_nonfinite=0,
+                triggered_finite=0,
+                triggered_nonfinite=0,
+                diffmap_mtz="",
+                extrapolated_mtz="",
+                extrapolated_ccp4="",
+                error=f"{type(exc).__name__}: {exc}",
+            )
+
+    factor = 1.0 / chi if np.isfinite(chi) else None
 
     if not np.isfinite(chi):
-        diffmap_path = condition_dir / f"{config.name}_it_tv_diffmap_chi_nan.mtz"
+        diffmap_path = condition_dir / f"{config.name}_it_tv_diffmap_xtr_nan.mtz"
         diffmap.write_mtz(diffmap_path)
         return EstimationResult(
             condition=config.name,
@@ -183,13 +297,12 @@ def run(config: DatasetConfig) -> EstimationResult:
             diffmap_mtz=str(diffmap_path),
             extrapolated_mtz="",
             extrapolated_ccp4="",
-            error="Estimator returned a non-finite extrapolation factor.",
         )
 
-    diffmap_path = condition_dir / f"{config.name}_it_tv_diffmap_chi_{chi:.6f}.mtz"
+    assert factor is not None
+    diffmap_path = condition_dir / f"{config.name}_it_tv_diffmap_xtr{factor:.2f}.mtz"
     diffmap.write_mtz(diffmap_path)
 
-    factor = 1.0 / chi
     raw_mtz_path = Path(
         save_extrapolated_map(
             factor,
@@ -210,6 +323,8 @@ def run(config: DatasetConfig) -> EstimationResult:
         map_sampling=resolved["general"]["map_sampling"]
     ).write_ccp4_map(str(ccp4_path))
 
+    phenix_path = _make_phenix_ready(mtz_path, config.name, condition_dir)
+
     return EstimationResult(
         condition=config.name,
         status="ok",
@@ -223,4 +338,5 @@ def run(config: DatasetConfig) -> EstimationResult:
         diffmap_mtz=str(diffmap_path),
         extrapolated_mtz=str(mtz_path),
         extrapolated_ccp4=str(ccp4_path),
+        phenix_ready_mtz=str(phenix_path),
     )

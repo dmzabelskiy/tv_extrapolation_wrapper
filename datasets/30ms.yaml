@@ -1,8 +1,8 @@
-name: 10ns
-dark_mtz: initial/olpvr1/10ns/ground.mtz
-triggered_mtz: initial/olpvr1/10ns/10ns.mtz
-pdb_dark: initial/olpvr1/10ns/OLPVR1_eufel_newsg_dark_refine_011.pdb
-resolution_limit: 2.1
+name: 30ms
+dark_mtz: initial/olpvr1/30ms/ground.mtz
+triggered_mtz: initial/olpvr1/30ms/30ms.mtz
+pdb_dark: initial/olpvr1/30ms/olpvr1_xfel_dark_refine_007.pdb
+resolution_limit: 2.0
 columns:
   dark: {kind: intensity, amplitude_or_intensity: I, sigma: SIGI}
   triggered: {kind: intensity, amplitude_or_intensity: I, sigma: SIGI}

@@ -14,7 +14,7 @@ def main(argv: list[str] | None = None) -> int:
 
     run_parser = subparsers.add_parser("run", help="Run the it_tv pipeline for one or more dataset configs")
     run_parser.add_argument("configs", nargs="+", type=Path)
-    run_parser.add_argument("--summary", type=Path, default=Path("results/it_tv_pipeline/summary.csv"))
+    run_parser.add_argument("--summary", type=Path, default=Path("results/summary.csv"))
 
     args = parser.parse_args(argv)
 

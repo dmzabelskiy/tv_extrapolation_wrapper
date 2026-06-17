@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Optional
 
 import yaml
 from pydantic import BaseModel, Field
@@ -21,6 +21,8 @@ class DatasetConfig(BaseModel):
     resolution_limit: float
     columns: dict[str, ColumnSpec]
     rewrite_pdb_cell: bool = False
+    finite_filter: bool = False
+    scaling_loss: Literal["huber", "linear", "huber_safe"] = "huber"
     estimation: dict = Field(default_factory=dict)
     masking: dict = Field(default_factory=dict)
     output_dir: Path

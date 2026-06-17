@@ -1,7 +1,7 @@
 name: 5us
-dark_mtz: initial/5us/ground.mtz
-triggered_mtz: initial/5us/5us.mtz
-pdb_dark: initial/5us/olpvr1_xfel_dark_refine_007.pdb
+dark_mtz: initial/olpvr1/5us/ground.mtz
+triggered_mtz: initial/olpvr1/5us/5us.mtz
+pdb_dark: initial/olpvr1/5us/olpvr1_xfel_dark_refine_007.pdb
 resolution_limit: 1.8
 columns:
   dark: {kind: intensity, amplitude_or_intensity: I, sigma: SIGI}
@@ -18,4 +18,4 @@ masking:
   dark_size_threshold: 0.1
   exclude_positive_diffmap: true
   exclude_large_occupancy_outliers: false
-output_dir: results/it_tv_pipeline
+output_dir: results/xfel
