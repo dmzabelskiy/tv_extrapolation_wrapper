@@ -11,6 +11,10 @@ _INTENSITY_TYPE = "J"
 _AMPLITUDE_TYPE = "F"
 _SIGMA_TYPE = "Q"
 
+# Column name prefixes that identify model/map coefficients rather than
+# experimental amplitudes in a dimple/refmac output MTZ.
+_CALCULATED_AMPLITUDE_PREFIXES = ("FC", "FWT", "DELFWT")
+
 
 def _columns_by_type(mtz_path: Path) -> dict[str, list[str]]:
     mtz = gemmi.read_mtz_file(str(mtz_path))
@@ -18,6 +22,22 @@ def _columns_by_type(mtz_path: Path) -> dict[str, list[str]]:
     for col in mtz.columns:
         result.setdefault(col.type, []).append(col.label)
     return result
+
+
+def _filter_experimental_amplitudes(amplitude_cols: list[str]) -> list[str]:
+    """Remove calculated/map-coefficient columns; keep experimental amplitudes.
+
+    Dimple/refmac output MTZs contain both experimental (F, FP) and model
+    columns (FC, FWT, DELFWT, FC_ALL, …).  We discard any column whose name
+    starts with a known calculated prefix so the detector settles on just the
+    experimental amplitude.
+    """
+    experimental = [
+        c for c in amplitude_cols
+        if not any(c.upper().startswith(p) for p in _CALCULATED_AMPLITUDE_PREFIXES)
+    ]
+    # Fall back to full list if everything was filtered out (shouldn't happen)
+    return experimental if experimental else amplitude_cols
 
 
 def detect_column_spec(mtz_path: Path) -> ColumnSpec:
@@ -36,7 +56,7 @@ def detect_column_spec(mtz_path: Path) -> ColumnSpec:
 
     if amplitude_cols:
         kind = "amplitude"
-        data_cols = amplitude_cols
+        data_cols = _filter_experimental_amplitudes(amplitude_cols)
     elif intensity_cols:
         kind = "intensity"
         data_cols = intensity_cols
@@ -46,9 +66,9 @@ def detect_column_spec(mtz_path: Path) -> ColumnSpec:
             f"Available column types: {sorted(by_type)}"
         )
 
-    if len(data_cols) > 1:
+    if len(data_cols) != 1:
         raise ValueError(
-            f"{mtz_path}: multiple {kind} columns {data_cols}. "
+            f"{mtz_path}: cannot unambiguously pick a single {kind} column from {data_cols}. "
             "Specify columns explicitly via a dataset YAML."
         )
     data_col = data_cols[0]
