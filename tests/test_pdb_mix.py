@@ -71,13 +71,15 @@ def test_build_mixed_model_x0_gives_ground_occupancy(tmp_path):
     extrap_pdb = _make_single_atom_pdb(tmp_path, "extrap.pdb", 10.0, 10.0, 10.0, occ=1.0)
     _, gmap = read_pdb_into_resmap(ground_pdb)
     _, emap = read_pdb_into_resmap(extrap_pdb)
-    lines = build_mixed_model([], gmap, emap, x=0.0, mode="occupancy")
+    lines = build_mixed_model(gmap, emap, x=0.0, mode="occupancy")
     atoms = [parse_atom_line(l) for l in lines if l.startswith(("ATOM", "HETATM"))]
     atoms = [a for a in atoms if a is not None]
     # at x=0: ground contributes with occ=1*(1-0)=1.0, extrap with occ=1*0=0.0 (filtered)
     assert len(atoms) >= 1
     ground_atoms = [a for a in atoms if a["altloc"] in ("A", " ")]
     assert all(a["occ"] == pytest.approx(1.0) for a in ground_atoms)
+    extrap_atoms = [a for a in atoms if a["altloc"] == "Q"]
+    assert len(extrap_atoms) == 0, "At x=0, no extrap (Q-altloc) atoms should appear"
 
 
 def test_build_mixed_model_x1_gives_extrap_occupancy(tmp_path):
@@ -85,7 +87,7 @@ def test_build_mixed_model_x1_gives_extrap_occupancy(tmp_path):
     extrap_pdb = _make_single_atom_pdb(tmp_path, "extrap.pdb", 10.0, 10.0, 10.0, occ=1.0)
     _, gmap = read_pdb_into_resmap(ground_pdb)
     _, emap = read_pdb_into_resmap(extrap_pdb)
-    lines = build_mixed_model([], gmap, emap, x=1.0, mode="occupancy")
+    lines = build_mixed_model(gmap, emap, x=1.0, mode="occupancy")
     atoms = [parse_atom_line(l) for l in lines if l.startswith(("ATOM", "HETATM"))]
     atoms = [a for a in atoms if a is not None]
     extrap_atoms = [a for a in atoms if a["altloc"] == "Q"]

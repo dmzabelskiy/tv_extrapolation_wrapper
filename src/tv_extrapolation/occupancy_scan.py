@@ -93,9 +93,8 @@ def run_scan(
     mode: str = "occupancy",
 ) -> ScanResult:
     out_dir.mkdir(parents=True, exist_ok=True)
-    _, gmap = read_pdb_into_resmap(ground_pdb)
+    header, gmap = read_pdb_into_resmap(ground_pdb)
     _, emap = read_pdb_into_resmap(extrap_pdb)
-    header, _ = read_pdb_into_resmap(ground_pdb)
 
     points: list[ScanPoint] = []
     for x in x_grid:
@@ -103,7 +102,7 @@ def run_scan(
         mixed_pdb = out_dir / f"mixed_{x_tag}.pdb"
         refine_dir = out_dir / f"refine_{x_tag}"
 
-        atom_lines = build_mixed_model(header, gmap, emap, x, mode=mode)
+        atom_lines = build_mixed_model(gmap, emap, x, mode=mode)
         write_mixed_pdb(mixed_pdb, header, atom_lines)
 
         log_path, ok = run_phenix_adp_refine(

@@ -101,7 +101,6 @@ def read_pdb_into_resmap(pdb_path: Path) -> tuple[list[str], ResMap]:
 
 
 def build_mixed_model(
-    header: list[str],
     ground_map: ResMap,
     extrap_map: ResMap,
     x: float,
