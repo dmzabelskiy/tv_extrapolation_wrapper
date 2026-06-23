@@ -36,8 +36,13 @@ def _filter_experimental_amplitudes(amplitude_cols: list[str]) -> list[str]:
         c for c in amplitude_cols
         if not any(c.upper().startswith(p) for p in _CALCULATED_AMPLITUDE_PREFIXES)
     ]
-    # Fall back to full list if everything was filtered out (shouldn't happen)
-    return experimental if experimental else amplitude_cols
+    if not experimental:
+        raise ValueError(
+            f"All F-type columns {amplitude_cols} look calculated "
+            f"(prefixes {_CALCULATED_AMPLITUDE_PREFIXES}). "
+            "Specify columns explicitly via a dataset YAML."
+        )
+    return experimental
 
 
 def detect_column_spec(mtz_path: Path) -> ColumnSpec:

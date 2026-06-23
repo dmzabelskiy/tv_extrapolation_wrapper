@@ -53,6 +53,7 @@ def run_phenix_adp_refine(
     cpus: int = 2,
     phenix_bin: str = "phenix.refine",
     strategy: str = "individual_adp",
+    cycles: int = 1,
 ) -> tuple[Path, bool]:
     out_dir.mkdir(parents=True, exist_ok=True)
     log_path = out_dir / "phenix_refine.log"
@@ -63,7 +64,7 @@ def run_phenix_adp_refine(
         *[str(c) for c in cif_files],
         f"output.prefix={out_dir / 'ref'}",
         f"strategy={strategy}",
-        "main.number_of_macro_cycles=1",
+        f"main.number_of_macro_cycles={cycles}",
         "hydrogens.refine=none",
     ]
     if cpus > 1:
@@ -91,6 +92,8 @@ def run_scan(
     cpus: int = 2,
     phenix_bin: str = "phenix.refine",
     mode: str = "occupancy",
+    strategy: str = "individual_adp",
+    cycles: int = 1,
 ) -> ScanResult:
     out_dir.mkdir(parents=True, exist_ok=True)
     header, gmap = read_pdb_into_resmap(ground_pdb)
@@ -108,6 +111,7 @@ def run_scan(
         log_path, ok = run_phenix_adp_refine(
             mixed_pdb, triggered_mtz, refine_dir,
             cif_files=cif_files, cpus=cpus, phenix_bin=phenix_bin,
+            strategy=strategy, cycles=cycles,
         )
         rwork, rfree = parse_refine_log_for_R(log_path)
         print(f"  x={x:.3f}  Rwork={rwork}  Rfree={rfree}  ok={ok}")

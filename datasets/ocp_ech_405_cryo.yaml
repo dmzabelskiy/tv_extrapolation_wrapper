@@ -12,5 +12,6 @@ columns:
     kind: amplitude
     amplitude_or_intensity: F
     sigma: SIGF
+scaling_loss: linear
 finite_filter: true
 output_dir: results/ocp

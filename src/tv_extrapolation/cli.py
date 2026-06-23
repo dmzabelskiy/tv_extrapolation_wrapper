@@ -130,6 +130,10 @@ def main(argv: list[str] | None = None) -> int:
     sc_parser.add_argument("--cpus", type=int, default=2)
     sc_parser.add_argument("--phenix-bin", default="phenix.refine", dest="phenix_bin")
     sc_parser.add_argument("--mode", choices=["occupancy", "coords"], default="occupancy")
+    sc_parser.add_argument("--strategy", default="individual_adp",
+                           help="Phenix refinement strategy (default: individual_adp)")
+    sc_parser.add_argument("--cycles", type=int, default=1,
+                           help="Number of phenix.refine macrocycles (default: 1)")
 
     args = parser.parse_args(argv)
 
@@ -194,6 +198,8 @@ def main(argv: list[str] | None = None) -> int:
             cpus=args.cpus,
             phenix_bin=args.phenix_bin,
             mode=args.mode,
+            strategy=args.strategy,
+            cycles=args.cycles,
         )
         if result.best is not None:
             print(f"Best x={result.best.x:.3f}  Rfree={result.best.rfree}  Rwork={result.best.rwork}")
