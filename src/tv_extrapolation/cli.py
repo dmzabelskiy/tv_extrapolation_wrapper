@@ -7,6 +7,7 @@ from typing import Literal
 
 from .config import DatasetConfig
 from .pipeline import run
+from .occupancy_scan import run_phenix_adp_refine, run_scan
 
 
 def _is_direct_mode(paths: list[Path]) -> bool:
@@ -94,6 +95,42 @@ def main(argv: list[str] | None = None) -> int:
              "re-seat the model (implies --rewrite-pdb-cell; requires Phenix in PATH)",
     )
 
+    # --- refine-extrap subcommand ---
+    re_parser = subparsers.add_parser(
+        "refine-extrap",
+        help="Refine dark PDB against extrapolated MTZ to produce an excited-state model.",
+    )
+    re_parser.add_argument("dark_pdb", type=Path, help="Dark-state PDB (ground)")
+    re_parser.add_argument("extrap_mtz", type=Path, help="Phenix-ready extrapolated MTZ")
+    re_parser.add_argument("--out-dir", type=Path, required=True, dest="out_dir",
+                           help="Output directory for refinement files")
+    re_parser.add_argument("--cif", type=Path, action="append", default=[], dest="cif_files",
+                           metavar="FILE", help="Ligand CIF restraint file (repeatable)")
+    re_parser.add_argument("--cpus", type=int, default=2)
+    re_parser.add_argument("--phenix-bin", default="phenix.refine", dest="phenix_bin",
+                           help="Path to phenix.refine binary")
+    re_parser.add_argument("--strategy", default="individual_sites+individual_adp",
+                           help="Phenix refinement strategy (default: individual_sites+individual_adp)")
+
+    # --- scan subcommand ---
+    sc_parser = subparsers.add_parser(
+        "scan",
+        help="Scan occupancy x-grid: refine mixed models vs triggered MTZ, plot Rfree vs x.",
+    )
+    sc_parser.add_argument("ground_pdb", type=Path, help="Ground-state (dark) PDB")
+    sc_parser.add_argument("extrap_pdb", type=Path, help="Excited-state PDB (from refine-extrap)")
+    sc_parser.add_argument("triggered_mtz", type=Path, help="Raw triggered MTZ")
+    sc_parser.add_argument("--out-dir", type=Path, required=True, dest="out_dir",
+                           help="Output directory")
+    sc_parser.add_argument("--x-grid", nargs="+", type=float, dest="x_grid",
+                           default=[0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5],
+                           help="Occupancy x values to scan")
+    sc_parser.add_argument("--cif", type=Path, action="append", default=[], dest="cif_files",
+                           metavar="FILE")
+    sc_parser.add_argument("--cpus", type=int, default=2)
+    sc_parser.add_argument("--phenix-bin", default="phenix.refine", dest="phenix_bin")
+    sc_parser.add_argument("--mode", choices=["occupancy", "coords"], default="occupancy")
+
     args = parser.parse_args(argv)
 
     if args.command == "run":
@@ -134,6 +171,35 @@ def main(argv: list[str] | None = None) -> int:
             writer.writeheader()
             writer.writerows(rows)
         print(f"Wrote {args.summary}")
+        return 0
+
+    elif args.command == "refine-extrap":
+        log_path, ok = run_phenix_adp_refine(
+            args.dark_pdb, args.extrap_mtz, args.out_dir,
+            cif_files=args.cif_files,
+            cpus=args.cpus,
+            phenix_bin=args.phenix_bin,
+            strategy=args.strategy,
+        )
+        status = "ok" if ok else "FAILED"
+        print(f"refine-extrap {status}: log at {log_path}")
+        return 0 if ok else 1
+
+    elif args.command == "scan":
+        result = run_scan(
+            args.ground_pdb, args.extrap_pdb, args.triggered_mtz,
+            out_dir=args.out_dir,
+            x_grid=args.x_grid,
+            cif_files=args.cif_files,
+            cpus=args.cpus,
+            phenix_bin=args.phenix_bin,
+            mode=args.mode,
+        )
+        if result.best is not None:
+            print(f"Best x={result.best.x:.3f}  Rfree={result.best.rfree}  Rwork={result.best.rwork}")
+        if result.plot_path:
+            print(f"Plot: {result.plot_path}")
+        print(f"CSV:  {args.out_dir / 'scan_results.csv'}")
         return 0
 
     return 1
