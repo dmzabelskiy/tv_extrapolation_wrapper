@@ -1,0 +1,16 @@
+name: ech_405_cryo
+dark_mtz: initial/ocp_ech/ech_405nm_cryo/M4_ECH_old_dark_012_refine_002.mtz
+triggered_mtz: initial/ocp_ech/ech_405nm_cryo/ech-laser_dimple.mtz
+pdb_dark: initial/ocp_ech/ech_405nm_cryo/M4_ECH_old_dark_012_refine_002.pdb
+resolution_limit: 1.68
+columns:
+  dark:
+    kind: amplitude
+    amplitude_or_intensity: F-obs
+    sigma: SIGF-obs
+  triggered:
+    kind: amplitude
+    amplitude_or_intensity: F
+    sigma: SIGF
+finite_filter: true
+output_dir: results/ocp
