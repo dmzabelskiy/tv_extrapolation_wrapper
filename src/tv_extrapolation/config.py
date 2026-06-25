@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Literal
 
 import yaml
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 
 
 class ColumnSpec(BaseModel):
@@ -27,8 +27,8 @@ class DatasetConfig(BaseModel):
     dark_mtz: Path
     triggered_mtz: Path
     pdb_dark: Path
-    resolution_limit: float | None = None
-    columns: dict[str, ColumnSpec] | None = None
+    resolution_limit: float
+    columns: dict[str, ColumnSpec]
     rewrite_pdb_cell: bool = False
     phenix_refine_cell: bool = False
     finite_filter: bool = False
@@ -37,21 +37,6 @@ class DatasetConfig(BaseModel):
     estimation: dict = Field(default_factory=dict)
     masking: dict = Field(default_factory=dict)
     output_dir: Path
-
-    @model_validator(mode="after")
-    def _auto_detect(self) -> "DatasetConfig":
-        if self.columns is None or self.resolution_limit is None:
-            from .mtz_inspect import detect_column_spec, detect_resolution_limit
-            if self.columns is None:
-                self.columns = {
-                    "dark": detect_column_spec(self.dark_mtz),
-                    "triggered": detect_column_spec(self.triggered_mtz),
-                }
-            if self.resolution_limit is None:
-                self.resolution_limit = detect_resolution_limit(
-                    self.dark_mtz, self.triggered_mtz
-                )
-        return self
 
     @classmethod
     def from_yaml(cls, path: Path | str) -> "DatasetConfig":
