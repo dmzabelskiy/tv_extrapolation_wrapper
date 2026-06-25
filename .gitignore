@@ -2,6 +2,10 @@ __pycache__/
 *.py[cod]
 .ipynb_checkpoints/
 results/
+!examples/results/
+*.pkl
+diffmap_[0-9]*.mtz
 *.egg-info/
 data/
+!examples/init/
 logs/

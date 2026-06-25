@@ -13,3 +13,4 @@ columns:
     kind: amplitude
     amplitude_or_intensity: F
     sigma: SIGF
+scaling_loss: huber_safe

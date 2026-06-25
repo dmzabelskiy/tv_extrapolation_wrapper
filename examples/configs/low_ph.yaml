@@ -1,0 +1,16 @@
+name: low_ph
+dark_mtz: examples/init/low_ph/ground.mtz
+triggered_mtz: examples/init/low_ph/low.mtz
+pdb_dark: examples/init/low_ph/olpvr1_high_res_refine_72.pdb
+output_dir: examples/results/low_ph
+resolution_limit: 1.13
+columns:
+  dark:
+    kind: amplitude
+    amplitude_or_intensity: F
+    sigma: SIGF
+  triggered:
+    kind: amplitude
+    amplitude_or_intensity: F
+    sigma: SIGF
+scaling_loss: huber_safe

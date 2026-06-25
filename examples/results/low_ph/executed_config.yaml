@@ -1,0 +1,66 @@
+general:
+  name_machine: low_ph
+  input_name_human: low_ph
+  input_output_folder: examples/results/low_ph
+  input_plot_folder: examples/results/low_ph/low_ph
+  pdbloc_dark: examples/init/low_ph/olpvr1_high_res_refine_72.pdb
+  map_sampling: 3
+  high_resolution_limit: 1.13
+  comparison_type: triggered
+  name_human: low_ph
+  output_folder: examples/results/low_ph/
+  plot_folder: examples/results/low_ph/low_ph/
+input_files:
+  data_folder: null
+  map_dark: examples/init/low_ph/ground.mtz
+  map_triggered: examples/init/low_ph/low.mtz
+  map_diff: null
+  pdb_dark: examples/init/low_ph/olpvr1_high_res_refine_72.pdb
+  pdb_triggered: null
+  cif_file: null
+  columns_dark:
+    amplitude_column: F
+    phase_column: MODEL
+    uncertainty_column: SIGF
+  columns_dark_ints:
+    ints_column: I
+    int_uncertainty_column: SIGI
+  columns_triggered:
+    amplitude_column: F
+    phase_column: MODEL
+    uncertainty_column: SIGF
+  columns_triggered_ints:
+    ints_column: I
+    int_uncertainty_column: SIGI
+  columns_diff:
+    amplitude_column: FKOFOWT
+    phase_column: PHIFKOFOWT
+    uncertainty_column: SIGF
+  impose_dark_phases: true
+  columns_are_ints: false
+masking:
+  sigma: 3.0
+  min_blob_size: 3.0
+  blocking_radius: 1.5
+  blocking_percentile: 95.0
+  exclude_solvent: true
+  dark_size_threshold: 0.1
+  exclude_positive_diffmap: true
+  exclude_large_occupancy_outliers: false
+map_processing:
+  diffmap_type: it_tv
+  dark_mean_correction: true
+  simple_dark_correction: true
+  calculate_diffmap_before_f000: false
+  preprocessing: false
+plot:
+  show_ignored_voxels: true
+  set_ylim: null
+  is_composite: false
+  std_cutoff: 3.0
+  solvent_density: 0.4
+  minimum_datapoints: 10
+  show_plot: false
+  save_to_file: true
+  markersize: 1
+  comparison_to_reference: false
