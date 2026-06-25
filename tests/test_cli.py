@@ -2,7 +2,7 @@ import csv
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-from tv_extrapolation.cli import main
+from tv_extrapolation.cli import main, _collect_configs
 from tv_extrapolation.occupancy_scan import ScanResult, ScanPoint
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -86,3 +86,20 @@ def test_scan_subcommand_calls_run_scan(tmp_path, monkeypatch):
     assert mock_fn.called
     kwargs = mock_fn.call_args
     assert kwargs[1]["x_grid"] == [0.0, 0.1, 0.2]
+
+
+def test_collect_configs_expands_directory(tmp_path):
+    sub = tmp_path / "sub"
+    sub.mkdir()
+    (tmp_path / "a.yaml").write_text("name: a\n")
+    (sub / "b.yaml").write_text("name: b\n")
+    (tmp_path / "not_yaml.txt").write_text("ignore\n")
+    result = _collect_configs([tmp_path])
+    assert sorted(p.name for p in result) == ["a.yaml", "b.yaml"]
+
+
+def test_collect_configs_passes_files_through(tmp_path):
+    f = tmp_path / "ds.yaml"
+    f.write_text("name: x\n")
+    result = _collect_configs([f])
+    assert result == [f]

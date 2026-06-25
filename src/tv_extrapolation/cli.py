@@ -10,6 +10,16 @@ from .pipeline import run
 from .occupancy_scan import run_phenix_adp_refine, run_scan
 
 
+def _collect_configs(paths: list[Path]) -> list[Path]:
+    result = []
+    for p in paths:
+        if p.is_dir():
+            result.extend(sorted(p.rglob("*.yaml")))
+        else:
+            result.append(p)
+    return result
+
+
 def _is_direct_mode(paths: list[Path]) -> bool:
     """True when the caller passed (dark.mtz, triggered.mtz, structure.pdb)."""
     return (
@@ -138,8 +148,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.command == "run":
-        if _is_direct_mode(args.configs):
-            dark_mtz, triggered_mtz, pdb = args.configs
+        config_paths = _collect_configs(args.configs)
+        if _is_direct_mode(config_paths):
+            dark_mtz, triggered_mtz, pdb = config_paths
             print(f"Direct mode: auto-detecting columns and resolution from MTZ files")
             config = DatasetConfig.from_files(
                 dark_mtz,
@@ -163,7 +174,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"{result.condition}: {result.status}: chi={result.chi}, factor={result.extrapolation_factor}")
         else:
             rows = []
-            for config_path in args.configs:
+            for config_path in config_paths:
                 config = DatasetConfig.from_yaml(config_path)
                 result = run(config)
                 rows.append(result.as_row())
