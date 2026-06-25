@@ -188,6 +188,56 @@ def _make_phenix_ready(extrapolated_mtz: Path, condition: str, condition_dir: Pa
     return target
 
 
+def _run_occupancy_scan(
+    config: DatasetConfig,
+    phenix_ready_mtz: Path,
+    condition_dir: Path,
+) -> tuple[float | None, float | None, str, str]:
+    """Run refine-extrap then occupancy scan. Returns (best_x, best_rfree, csv_path, plot_path)."""
+    from .occupancy_scan import run_phenix_adp_refine, run_scan
+
+    scan_cfg = config.occupancy_scan
+    assert scan_cfg is not None
+
+    refine_dir = condition_dir / "extrap_refine"
+    refine_dir.mkdir(parents=True, exist_ok=True)
+    _log, ok = run_phenix_adp_refine(
+        config.pdb_dark,
+        phenix_ready_mtz,
+        refine_dir,
+        cif_files=scan_cfg.cif_files,
+        cpus=scan_cfg.cpus,
+        phenix_bin=str(scan_cfg.phenix_bin),
+        strategy="individual_sites+individual_adp",
+    )
+    if not ok:
+        return None, None, "", ""
+
+    extrap_pdbs = sorted(refine_dir.glob("*_refine_*.pdb"))
+    if not extrap_pdbs:
+        return None, None, "", ""
+    extrap_pdb = extrap_pdbs[-1]
+
+    scan_dir = condition_dir / "occupancy_scan"
+    result = run_scan(
+        config.pdb_dark,
+        extrap_pdb,
+        config.triggered_mtz,
+        out_dir=scan_dir,
+        x_grid=scan_cfg.x_grid,
+        cif_files=scan_cfg.cif_files,
+        cpus=scan_cfg.cpus,
+        phenix_bin=str(scan_cfg.phenix_bin),
+        strategy=scan_cfg.strategy,
+        cycles=scan_cfg.cycles,
+    )
+    best_x = result.best.x if result.best else None
+    best_rfree = result.best.rfree if result.best else None
+    csv_path = str(scan_dir / "scan_results.csv") if (scan_dir / "scan_results.csv").exists() else ""
+    plot_path = str(result.plot_path) if result.plot_path else ""
+    return best_x, best_rfree, csv_path, plot_path
+
+
 def _align_reference_style_inputs(
     unscaled_dark: Map,
     unscaled_triggered: Map,
@@ -242,6 +292,10 @@ class EstimationResult:
     extrapolated_mtz: str
     extrapolated_ccp4: str
     phenix_ready_mtz: str = ""
+    scan_best_x: float | None = None
+    scan_best_rfree: float | None = None
+    scan_csv: str = ""
+    scan_plot: str = ""
     error: str = ""
 
     def as_row(self) -> dict:
@@ -260,10 +314,14 @@ class EstimationResult:
             "dark_nonfinite": self.dark_nonfinite,
             "triggered_finite": self.triggered_finite,
             "triggered_nonfinite": self.triggered_nonfinite,
+            "scan_best_x": _fmt(self.scan_best_x),
+            "scan_best_rfree": _fmt(self.scan_best_rfree),
             "diffmap_mtz": self.diffmap_mtz,
             "extrapolated_mtz": self.extrapolated_mtz,
             "extrapolated_ccp4": self.extrapolated_ccp4,
             "phenix_ready_mtz": self.phenix_ready_mtz,
+            "scan_csv": self.scan_csv,
+            "scan_plot": self.scan_plot,
             "error": self.error,
         }
 
@@ -373,6 +431,16 @@ def run(config: DatasetConfig) -> EstimationResult:
 
     phenix_path = _make_phenix_ready(mtz_path, config.name, condition_dir)
 
+    scan_best_x = scan_best_rfree = None
+    scan_csv = scan_plot = ""
+    if config.occupancy_scan is not None:
+        try:
+            scan_best_x, scan_best_rfree, scan_csv, scan_plot = _run_occupancy_scan(
+                config, Path(phenix_path), condition_dir
+            )
+        except Exception as exc:
+            scan_plot = f"scan error: {type(exc).__name__}: {exc}"
+
     return EstimationResult(
         condition=config.name,
         status="ok",
@@ -387,4 +455,8 @@ def run(config: DatasetConfig) -> EstimationResult:
         extrapolated_mtz=str(mtz_path),
         extrapolated_ccp4=str(ccp4_path),
         phenix_ready_mtz=str(phenix_path),
+        scan_best_x=scan_best_x,
+        scan_best_rfree=scan_best_rfree,
+        scan_csv=scan_csv,
+        scan_plot=scan_plot,
     )

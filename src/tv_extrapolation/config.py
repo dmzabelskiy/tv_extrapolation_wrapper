@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Literal
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class ColumnSpec(BaseModel):
@@ -13,20 +13,45 @@ class ColumnSpec(BaseModel):
     sigma: str
 
 
+class OccupancyScanConfig(BaseModel):
+    cif_files: list[Path] = Field(default_factory=list)
+    x_grid: list[float] = Field(default_factory=lambda: [0.05, 0.10, 0.15, 0.20, 0.25, 0.30])
+    phenix_bin: Path = Path("phenix.refine")
+    cpus: int = 2
+    cycles: int = 3
+    strategy: str = "individual_adp"
+
+
 class DatasetConfig(BaseModel):
     name: str
     dark_mtz: Path
     triggered_mtz: Path
     pdb_dark: Path
-    resolution_limit: float
-    columns: dict[str, ColumnSpec]
+    resolution_limit: float | None = None
+    columns: dict[str, ColumnSpec] | None = None
     rewrite_pdb_cell: bool = False
     phenix_refine_cell: bool = False
     finite_filter: bool = False
     scaling_loss: Literal["huber", "linear", "huber_safe"] = "huber"
+    occupancy_scan: OccupancyScanConfig | None = None
     estimation: dict = Field(default_factory=dict)
     masking: dict = Field(default_factory=dict)
     output_dir: Path
+
+    @model_validator(mode="after")
+    def _auto_detect(self) -> "DatasetConfig":
+        if self.columns is None or self.resolution_limit is None:
+            from .mtz_inspect import detect_column_spec, detect_resolution_limit
+            if self.columns is None:
+                self.columns = {
+                    "dark": detect_column_spec(self.dark_mtz),
+                    "triggered": detect_column_spec(self.triggered_mtz),
+                }
+            if self.resolution_limit is None:
+                self.resolution_limit = detect_resolution_limit(
+                    self.dark_mtz, self.triggered_mtz
+                )
+        return self
 
     @classmethod
     def from_yaml(cls, path: Path | str) -> "DatasetConfig":

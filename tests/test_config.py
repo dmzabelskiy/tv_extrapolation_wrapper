@@ -4,7 +4,7 @@ import pytest
 import yaml
 from pydantic import ValidationError
 
-from tv_extrapolation.config import DatasetConfig
+from tv_extrapolation.config import DatasetConfig, OccupancyScanConfig
 
 
 def _write_yaml(tmp_path: Path, payload: dict) -> Path:
@@ -168,3 +168,59 @@ def test_dataset_config_omitted_estimation_and_masking_default_to_empty_dicts(tm
 
     assert config.estimation == {}
     assert config.masking == {}
+
+
+def test_occupancy_scan_config_round_trip(tmp_path):
+    yaml_text = """
+name: test_ds
+dark_mtz: /dev/null
+triggered_mtz: /dev/null
+pdb_dark: /dev/null
+output_dir: /tmp
+resolution_limit: 2.0
+columns:
+  dark:
+    kind: amplitude
+    amplitude_or_intensity: F
+    sigma: SIGF
+  triggered:
+    kind: amplitude
+    amplitude_or_intensity: F
+    sigma: SIGF
+occupancy_scan:
+  x_grid: [0.1, 0.2, 0.3]
+  phenix_bin: /usr/bin/phenix.refine
+  cpus: 2
+  cycles: 3
+  strategy: individual_adp
+"""
+    p = tmp_path / "ds.yaml"
+    p.write_text(yaml_text)
+    cfg = DatasetConfig.from_yaml(p)
+    assert cfg.occupancy_scan is not None
+    assert cfg.occupancy_scan.x_grid == [0.1, 0.2, 0.3]
+    assert cfg.occupancy_scan.cycles == 3
+
+
+def test_occupancy_scan_config_absent_by_default(tmp_path):
+    yaml_text = """
+name: test_ds
+dark_mtz: /dev/null
+triggered_mtz: /dev/null
+pdb_dark: /dev/null
+output_dir: /tmp
+resolution_limit: 2.0
+columns:
+  dark:
+    kind: amplitude
+    amplitude_or_intensity: F
+    sigma: SIGF
+  triggered:
+    kind: amplitude
+    amplitude_or_intensity: F
+    sigma: SIGF
+"""
+    p = tmp_path / "ds.yaml"
+    p.write_text(yaml_text)
+    cfg = DatasetConfig.from_yaml(p)
+    assert cfg.occupancy_scan is None
