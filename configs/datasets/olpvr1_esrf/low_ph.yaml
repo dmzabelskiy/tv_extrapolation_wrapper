@@ -1,0 +1,15 @@
+name: low_ph
+dark_mtz: data/olpvr1_esrf/low_ph/ground.mtz
+triggered_mtz: data/olpvr1_esrf/low_ph/low.mtz
+pdb_dark: data/olpvr1_esrf/low_ph/olpvr1_high_res_refine_72.pdb
+output_dir: results/olpvr1_esrf/low_ph
+resolution_limit: 1.13
+columns:
+  dark:
+    kind: amplitude
+    amplitude_or_intensity: F
+    sigma: SIGF
+  triggered:
+    kind: amplitude
+    amplitude_or_intensity: F
+    sigma: SIGF

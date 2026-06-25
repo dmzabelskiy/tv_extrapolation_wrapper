@@ -1,0 +1,15 @@
+name: 5ms_0-37p5ms
+dark_mtz: data/olpvr1_esrf/5ms_0-37p5ms/ground.mtz
+triggered_mtz: data/olpvr1_esrf/5ms_0-37p5ms/5ms_0-37p5ms.mtz
+pdb_dark: data/olpvr1_esrf/5ms_0-37p5ms/olpvr1_id30a3_dark_refine_031.pdb
+output_dir: results/olpvr1_esrf/5ms_0-37p5ms
+resolution_limit: 2.2
+columns:
+  dark:
+    kind: amplitude
+    amplitude_or_intensity: F
+    sigma: SIGF
+  triggered:
+    kind: amplitude
+    amplitude_or_intensity: F
+    sigma: SIGF

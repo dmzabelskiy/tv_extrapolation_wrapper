@@ -1,0 +1,15 @@
+name: ocp_non_filtered
+dark_mtz: data/ocp_ech/ocp_non_filtered/ech-dark_dimple.mtz
+triggered_mtz: data/ocp_ech/ocp_non_filtered/ech-laser_dimple.mtz
+pdb_dark: data/ocp_ech/ocp_non_filtered/OCP_ECH_refine_002.pdb
+output_dir: results/ocp_ech/ocp_non_filtered
+resolution_limit: 1.8
+columns:
+  dark:
+    kind: amplitude
+    amplitude_or_intensity: F
+    sigma: SIGF
+  triggered:
+    kind: amplitude
+    amplitude_or_intensity: F
+    sigma: SIGF

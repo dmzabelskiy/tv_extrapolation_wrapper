@@ -1,0 +1,15 @@
+name: 10ms
+dark_mtz: data/olpvr1_xfel/10ms/ground.mtz
+triggered_mtz: data/olpvr1_xfel/10ms/10ms.mtz
+pdb_dark: data/olpvr1_xfel/10ms/OLPVR1_eufel_newsg_dark_refine_011.pdb
+output_dir: results/olpvr1_xfel/10ms
+resolution_limit: 2.0
+columns:
+  dark:
+    kind: intensity
+    amplitude_or_intensity: I
+    sigma: SIGI
+  triggered:
+    kind: intensity
+    amplitude_or_intensity: I
+    sigma: SIGI
