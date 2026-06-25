@@ -209,12 +209,15 @@ def _run_occupancy_scan(
         cpus=scan_cfg.cpus,
         phenix_bin=str(scan_cfg.phenix_bin),
         strategy="individual_sites+individual_adp",
+        cycles=scan_cfg.cycles,
     )
     if not ok:
+        print(f"WARNING: occupancy scan for {config.name}: refine-extrap failed")
         return None, None, "", ""
 
     extrap_pdbs = sorted(refine_dir.glob("*_refine_*.pdb"))
     if not extrap_pdbs:
+        print(f"WARNING: occupancy scan for {config.name}: no refined PDB found in {refine_dir}")
         return None, None, "", ""
     extrap_pdb = extrap_pdbs[-1]
 

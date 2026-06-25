@@ -164,7 +164,7 @@ If `occupancy_scan:` is configured, two more directories appear:
 ├── extrap_refine/     # phenix.refine of dark PDB against extrapolated MTZ
 └── occupancy_scan/
     ├── scan_results.csv
-    └── occupancy_scan_combined.png
+    └── occupancy_scan.png
 ```
 
 `results/summary.csv` accumulates results from each run.
@@ -207,4 +207,4 @@ data/
 - `can_laser26` (both filtered and non-filtered): chi=nan — likely scaling failure, unresolved
 - `ocp_firstprocessing_1h`: raw intensity-only MTZ, requires `scaling_loss: huber_safe`
 - Phenix not in PATH: always pass `--phenix-bin /home/dmitrii/phenix-2.0-5936/bin/phenix.refine`
-- `ech_laser_1h_d1` / `ech_laser_1h_d2`: column detection may need explicit `columns:` block
+- `ech_laser_1h_d1` / `ech_laser_1h_d2`: use column names F / SIGF (not F-obs / SIGF-obs) — verify MTZ headers match
