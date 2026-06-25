@@ -63,6 +63,7 @@ def run_phenix_adp_refine(
         str(mtz),
         *[str(c) for c in cif_files],
         f"output.prefix={out_dir / 'ref'}",
+        "output.overwrite=True",
         f"strategy={strategy}",
         f"main.number_of_macro_cycles={cycles}",
         "hydrogens.refine=none",
