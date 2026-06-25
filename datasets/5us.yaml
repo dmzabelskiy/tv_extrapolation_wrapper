@@ -1,7 +1,7 @@
 name: 5us
-dark_mtz: initial/olpvr1/5us/ground.mtz
-triggered_mtz: initial/olpvr1/5us/5us.mtz
-pdb_dark: initial/olpvr1/5us/olpvr1_xfel_dark_refine_007.pdb
+dark_mtz: data/olpvr1_xfel/5us/ground.mtz
+triggered_mtz: data/olpvr1_xfel/5us/5us.mtz
+pdb_dark: data/olpvr1_xfel/5us/olpvr1_xfel_dark_refine_007.pdb
 resolution_limit: 1.8
 columns:
   dark: {kind: intensity, amplitude_or_intensity: I, sigma: SIGI}
