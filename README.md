@@ -1,7 +1,9 @@
 # tv_extrapolation
 
-Time-resolved crystallography pipeline implementing the **it_tv** (iterative total-variation)
-occupancy-extrapolation method. Compares against Xtrapol8 across multiple protein/dataset families.
+A wrapper pipeline around the **it_tv** (iterative total-variation) method implemented in
+[rs-station/meteor](https://github.com/rs-station/meteor). Provides a unified CLI and config-driven
+interface for running it_tv extrapolation across multiple datasets, with optional occupancy scanning
+via Phenix refinement.
 
 ## Quick Start
 
@@ -12,16 +14,17 @@ conda activate tv-extrapolation
 tv-extrapolate run configs/datasets/ --summary results/summary.csv
 
 # Run a single family
-tv-extrapolate run configs/datasets/ocp_ech/
+tv-extrapolate run configs/datasets/olpvr1_esrf/
 
 # Run a single dataset
-tv-extrapolate run configs/datasets/ocp_ech/ech_405_cryo.yaml
+tv-extrapolate run configs/datasets/olpvr1_esrf/trapping_1.yaml
 
 # Direct mode: no config file needed
-tv-extrapolate run data/ocp_can/can_dark_nonfilt/dimple_processing/can-dark_dimple.mtz \
-                   data/ocp_can/can_laser14_nonfilt/dimple_processing/can-laser14_dimple.mtz \
-                   data/ocp_can/M4_CAN_dark_nonfilt_refine_002.pdb \
-                   --name can_laser14 --output results/ocp_can/can_laser14
+tv-extrapolate run data/olpvr1_esrf/trapping_1/ground.mtz \
+                   data/olpvr1_esrf/trapping_1/6_CD364A_473nm_RT_5sec_5mWt.mtz \
+                   data/olpvr1_esrf/trapping_1/olpvr1_high_res_refine_72.pdb \
+                   --name trapping_1 --output results/olpvr1_esrf/trapping_1 \
+                   --scaling-loss huber_safe
 ```
 
 ## Installation
@@ -127,9 +130,9 @@ columns:
 
 ```yaml
 occupancy_scan:
-  cif_files: [data/ocp_ech/ech_405nm_cryo/ECH.cif]
+  cif_files: [data/my_protein/ligand.cif]   # omit if no CIF needed
   x_grid: [0.05, 0.10, 0.15, 0.20, 0.25, 0.30]
-  phenix_bin: /home/dmitrii/phenix-2.0-5936/bin/phenix.refine
+  phenix_bin: /path/to/phenix-2.0/bin/phenix.refine
   cpus: 4
   cycles: 3
   strategy: individual_adp
@@ -173,38 +176,18 @@ If `occupancy_scan:` is configured, two more directories appear:
 
 ```
 data/
-├── ocp_ech/                     # OCP ECH cryo datasets
-│   ├── dark/                    # shared ECH dark dataset
-│   ├── ech_405nm_cryo/          # 405 nm cryo illumination
-│   ├── ech_laser_1h_d1/         # 1h laser, replicate 1
-│   ├── ech_laser_1h_d2/         # 1h laser, replicate 2
-│   ├── ech_laser_2h/            # 2h laser
-│   ├── ech_laser_30min/         # 30 min laser
-│   ├── ocp_filtered/            # legacy filtered dataset
-│   ├── ocp_non_filtered/        # legacy non-filtered dataset
-│   ├── ocp_oldflip_maxiv/       # MAX IV flip variant
-│   ├── ocp_part_filt/           # partially filtered
-│   └── ocp_firstprocessing/     # first-pass processing
-├── ocp_can/                     # OCP CAN datasets
-│   ├── can_dark_nonfilt/        # non-filtered dark
-│   ├── can_dark_filt/           # filtered dark
-│   ├── can_laser14_nonfilt/     # laser 14 Hz, non-filtered
-│   ├── can_laser14_filt/        # laser 14 Hz, filtered
-│   ├── can_laser26_nonfilt/     # laser 26 Hz, non-filtered
-│   ├── can_laser26_filt/        # laser 26 Hz, filtered
-│   └── M4_CAN_dark_nonfilt_refine_002.pdb
 ├── olpvr1_xfel/                 # OLPVR1 XFEL datasets
 │   ├── 10ms/, 10ns/, 30ms/, 5us/
-└── olpvr1_esrf/                 # OLPVR1 ESRF datasets
-    ├── 5ms_0-37p5ms/, 5ms_0-75ms/, 5ms_37p5-75ms/
-    ├── 75ms_0-37p5ms/, 75ms_0-75ms/, 75ms_37p5-75ms/
-    ├── esrf_5ms/, esrf_5ms_2/, esrf_75ms/
-    └── low_ph/, trapping_1/, trapping_2/
+└── olpvr1_esrf/                 # OLPVR1 synchrotron datasets
+    ├── 5ms_0-37p5ms/, 5ms_0-75ms/, 5ms_37p5-75ms/   # ESRF
+    ├── 75ms_0-37p5ms/, 75ms_0-75ms/, 75ms_37p5-75ms/ # ESRF
+    ├── esrf_5ms/, esrf_5ms_2/, esrf_75ms/             # ESRF
+    ├── low_ph/                                         # ESRF
+    └── trapping_1/, trapping_2/                        # EMBL
 ```
 
 ## Known Issues
 
-- `can_laser26` (both filtered and non-filtered): chi=nan — likely scaling failure, unresolved
-- `ocp_firstprocessing_1h`: raw intensity-only MTZ, requires `scaling_loss: huber_safe`
-- Phenix not in PATH: always pass `--phenix-bin /home/dmitrii/phenix-2.0-5936/bin/phenix.refine`
-- `ech_laser_1h_d1` / `ech_laser_1h_d2`: use column names F / SIGF (not F-obs / SIGF-obs) — verify MTZ headers match
+- Phenix not in PATH: always pass `--phenix-bin /path/to/phenix-2.0/bin/phenix.refine`
+- Some datasets require `scaling_loss: huber_safe` when standard Huber fails (e.g. `trapping_1`, `trapping_2`)
+- Column names vary by dataset — verify MTZ headers match `columns:` in your config (`F`/`SIGF` vs `F-obs`/`SIGF-obs`)
