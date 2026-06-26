@@ -74,8 +74,8 @@ tv-extrapolate scan GROUND_PDB EXTRAP_PDB TRIGGERED_MTZ --out-dir DIR
 
 ## Dataset Config Format
 
-A minimal dataset YAML. Note that `resolution_limit` and `columns` are required in YAML mode
-(auto-detection is only available in direct mode via the CLI):
+A minimal dataset YAML. Only `columns` must be specified; `resolution_limit` is auto-detected
+as the coarser high-resolution limit across both MTZ files if omitted:
 
 ```yaml
 name: my_dataset
@@ -83,7 +83,6 @@ dark_mtz: data/my_protein/dark/dark_dimple.mtz
 triggered_mtz: data/my_protein/laser/laser_dimple.mtz
 pdb_dark: data/my_protein/dark_model.pdb
 output_dir: results/my_protein/my_dataset
-resolution_limit: 2.0
 columns:
   dark:
     kind: amplitude        # or intensity
@@ -104,7 +103,7 @@ All available fields:
 | `triggered_mtz` | path | required | Laser/triggered MTZ |
 | `pdb_dark` | path | required | Ground-state refined model |
 | `output_dir` | path | required | Where to write results |
-| `resolution_limit` | float | required | High-resolution cutoff (Å) |
+| `resolution_limit` | float | auto | High-resolution cutoff (Å); defaults to coarser of the two MTZs |
 | `columns` | dict | required | Column spec (see below) |
 | `scaling_loss` | str | `huber` | `huber`, `linear`, or `huber_safe` |
 | `finite_filter` | bool | false | Drop non-finite reflections before scaling |
@@ -174,19 +173,14 @@ If `occupancy_scan:` is configured, two more directories appear:
 
 ## Data Layout
 
-All OLPVR1 datasets are from:
-> Zabelskiy et al. (2025) *Nature Structural & Molecular Biology* — https://www.nature.com/articles/s41594-025-01488-7
+The three bundled example datasets are from:
+> Zabelskii et al. (2025) *Nature Structural & Molecular Biology* — https://www.nature.com/articles/s41594-025-01488-7
 
 ```
-data/
-├── olpvr1_xfel/                 # OLPVR1 XFEL datasets
-│   ├── 10ms/, 10ns/, 30ms/, 5us/
-└── olpvr1_esrf/                 # OLPVR1 synchrotron datasets
-    ├── 5ms_0-37p5ms/, 5ms_0-75ms/, 5ms_37p5-75ms/   # ESRF
-    ├── 75ms_0-37p5ms/, 75ms_0-75ms/, 75ms_37p5-75ms/ # ESRF
-    ├── esrf_5ms/, esrf_5ms_2/, esrf_75ms/             # ESRF
-    ├── low_ph/                                         # ESRF
-    └── trapping_1/, trapping_2/                        # EMBL
+examples/init/
+├── trapping_1/     # OLPVR1, EMBL
+├── trapping_2/     # OLPVR1, EMBL
+└── low_ph/         # OLPVR1, ESRF
 ```
 
 ## Known Issues
