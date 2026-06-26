@@ -9,3 +9,31 @@ diffmap_[0-9]*.mtz
 data/
 !examples/init/
 logs/
+
+# Internal tooling
+.superpowers/
+.agents
+.claude/
+.codex
+
+# Private dataset configs
+configs/datasets/ocp_can/
+configs/datasets/ocp_ech/
+configs/datasets/olpvr1_xfel/
+configs/datasets/olpvr1_esrf/5ms_*.yaml
+configs/datasets/olpvr1_esrf/75ms_*.yaml
+configs/datasets/olpvr1_esrf/esrf_*.yaml
+configs/legacy/
+datasets/
+
+# Private analysis scripts and legacy work
+scripts/
+legacy/
+external/
+
+# Private docs
+docs/superpowers/
+docs/inventory.md
+docs/it_tv_extrapolated_maps.md
+docs/tv_it_xfel_results.md
+docs/xtrapol8_refined_results.md
