@@ -174,6 +174,9 @@ If `occupancy_scan:` is configured, two more directories appear:
 
 ## Data Layout
 
+All OLPVR1 datasets are from:
+> Zabelskiy et al. (2025) *Nature Structural & Molecular Biology* — https://www.nature.com/articles/s41594-025-01488-7
+
 ```
 data/
 ├── olpvr1_xfel/                 # OLPVR1 XFEL datasets
