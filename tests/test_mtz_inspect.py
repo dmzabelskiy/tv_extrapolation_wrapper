@@ -199,7 +199,6 @@ def test_detect_resolution_limit_is_coarser():
     We compare within 0.01 Å to tolerate the 2-decimal rounding applied to the
     returned value.
     """
-    import gemmi
     dark = gemmi.read_mtz_file(str(XFEL_DARK))
     triggered = gemmi.read_mtz_file(str(XFEL_TRIGGERED))
     limit = detect_resolution_limit(XFEL_DARK, XFEL_TRIGGERED)
@@ -288,7 +287,8 @@ def test_isigma_amplitude_fallback(tmp_path):
         drop_value=1.5,
         amplitude=True,
     )
-    cutoff = resolution_cutoff_by_isigma(p, threshold=1.0)
+    with pytest.warns(UserWarning):
+        cutoff = resolution_cutoff_by_isigma(p, threshold=1.0)
     assert 2.2 < cutoff < 2.8
 
 
@@ -335,9 +335,6 @@ def test_isigma_cutoff_test_ground_not_padded():
     cutoff = resolution_cutoff_by_isigma(DATA_TEST_GROUND, threshold=1.0)
     assert cutoff > 1.5  # not 1.13
     assert 1.7 < cutoff < 2.2
-
-
-from tv_extrapolation.config import DatasetConfig
 
 
 @have_9_39

@@ -207,6 +207,13 @@ def resolution_cutoff_by_isigma(
             f"{mtz_path}: no finite {data_col}/{sigma_col} reflections."
         )
     effective_threshold = threshold if is_intensity else 2.0 * threshold
+    if not is_intensity:
+        warnings.warn(
+            f"{mtz_path}: no intensity columns found; using amplitudes "
+            f"{data_col}/{sigma_col} with an effective F/σ threshold of "
+            f"{effective_threshold}.",
+            stacklevel=2,
+        )
     dmin, mean = _isigma_shells(d, isig, n_shells, min_shell_n)
     last_pass: int | None = None
     for i in range(len(mean)):
