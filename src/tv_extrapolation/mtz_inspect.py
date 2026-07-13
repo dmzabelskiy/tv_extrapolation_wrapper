@@ -224,12 +224,20 @@ def resolution_cutoff_by_isigma(
     return round(float(dmin[last_pass]), 2)
 
 
-def detect_resolution_limit(dark_mtz: Path, triggered_mtz: Path) -> float:
+def detect_resolution_limit(
+    dark_mtz: Path, triggered_mtz: Path, threshold: float = 1.0
+) -> float:
     """Return the coarser high-resolution limit (Å) across both MTZ files.
 
-    Uses the minimum resolution present in each file (i.e. the largest minimum
-    d-spacing), so the analysis is restricted to data that both datasets share.
+    Each file's cutoff is the resolution where mean ⟨I/σ⟩ falls below `threshold`
+    (computed over measured reflections only).  The coarser of the two — the
+    larger d — is returned so the analysis is restricted to data both datasets
+    support.
     """
-    dark = gemmi.read_mtz_file(str(dark_mtz))
-    triggered = gemmi.read_mtz_file(str(triggered_mtz))
-    return round(max(dark.resolution_high(), triggered.resolution_high()), 2)
+    return round(
+        max(
+            resolution_cutoff_by_isigma(Path(dark_mtz), threshold),
+            resolution_cutoff_by_isigma(Path(triggered_mtz), threshold),
+        ),
+        2,
+    )

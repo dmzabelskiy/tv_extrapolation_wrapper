@@ -290,3 +290,48 @@ def test_isigma_amplitude_fallback(tmp_path):
     )
     cutoff = resolution_cutoff_by_isigma(p, threshold=1.0)
     assert 2.2 < cutoff < 2.8
+
+
+# ---------------------------------------------------------------------------
+# Real-data regression: I/sigma cutoff vs. padded MTZ extent
+# ---------------------------------------------------------------------------
+
+# Real data present in this checkout under data/ (not initial/).
+DATA_9_39_DARK = Path("data/olpvr1_esrf/9-39ms/ground.mtz")
+DATA_9_39_TRIG = Path("data/olpvr1_esrf/9-39ms/9-39.mtz")
+DATA_TEST_GROUND = Path("data/test/ground.mtz")
+
+have_9_39 = pytest.mark.skipif(
+    not (DATA_9_39_DARK.exists() and DATA_9_39_TRIG.exists()),
+    reason="9-39ms data not available",
+)
+have_test_ground = pytest.mark.skipif(
+    not DATA_TEST_GROUND.exists(), reason="test ground.mtz not available"
+)
+
+
+@have_9_39
+def test_isigma_cutoff_real_triggered_not_padded():
+    """9-39.mtz extends to 1.13 Å but measured signal dies ~2.6 Å."""
+    cutoff = resolution_cutoff_by_isigma(DATA_9_39_TRIG, threshold=1.0)
+    assert cutoff > 2.0  # not the 1.13 Å padded extent
+    assert 2.4 < cutoff < 2.9
+
+
+@have_9_39
+def test_detect_resolution_limit_isigma_coarser():
+    """detect_resolution_limit returns the coarser of dark/triggered (~2.66)."""
+    limit = detect_resolution_limit(DATA_9_39_DARK, DATA_9_39_TRIG)
+    assert limit > 2.0  # regression: old code returned 1.13
+    assert 2.4 < limit < 2.9
+    dark = resolution_cutoff_by_isigma(DATA_9_39_DARK)
+    trig = resolution_cutoff_by_isigma(DATA_9_39_TRIG)
+    assert limit == round(max(dark, trig), 2)
+
+
+@have_test_ground
+def test_isigma_cutoff_test_ground_not_padded():
+    """data/test/ground.mtz padded to 1.13 Å; measured signal ~1.9 Å."""
+    cutoff = resolution_cutoff_by_isigma(DATA_TEST_GROUND, threshold=1.0)
+    assert cutoff > 1.5  # not 1.13
+    assert 1.7 < cutoff < 2.2
