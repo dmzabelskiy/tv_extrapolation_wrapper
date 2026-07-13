@@ -14,6 +14,7 @@ import pytest
 
 from tv_extrapolation.config import DatasetConfig
 from tv_extrapolation.mtz_inspect import (
+    _merge_sparse_shells,
     detect_column_spec,
     detect_resolution_limit,
     resolution_cutoff_by_isigma,
@@ -110,6 +111,35 @@ def test_isigma_step_cutoff(tmp_path):
     p = _write_synthetic_mtz(tmp_path / "step.mtz", finite_dmin=2.0, drop_below=2.5)
     cutoff = resolution_cutoff_by_isigma(p, threshold=1.0)
     assert 2.2 < cutoff < 2.8
+
+
+def test_merge_sparse_interior_shell_folds_into_lower_res():
+    # ordered low->high resolution (dmin decreasing); middle shell is sparse
+    shells = [
+        {"n": 100, "sum": 500.0, "dmin": 4.0},
+        {"n": 10, "sum": 5.0, "dmin": 3.0},     # sparse interior
+        {"n": 200, "sum": 1000.0, "dmin": 2.0},
+    ]
+    merged = _merge_sparse_shells(shells, min_shell_n=50)
+    assert len(merged) == 2
+    assert merged[0]["n"] == 110          # 100 + 10 (folded backward), not 210
+    assert merged[0]["sum"] == 505.0
+    assert merged[0]["dmin"] == 3.0       # extended to the sparse shell's high-res edge
+    assert merged[1]["n"] == 200
+    assert merged[1]["dmin"] == 2.0
+    assert all(s["n"] >= 50 for s in merged)
+
+
+def test_merge_sparse_leading_shell_absorbs_forward():
+    # a sparse first shell has no lower-resolution neighbour -> absorbs the next
+    shells = [
+        {"n": 10, "sum": 100.0, "dmin": 5.0},   # sparse leading
+        {"n": 100, "sum": 500.0, "dmin": 3.0},
+    ]
+    merged = _merge_sparse_shells(shells, min_shell_n=50)
+    assert len(merged) == 1
+    assert merged[0]["n"] == 110
+    assert merged[0]["dmin"] == 3.0
 
 
 # ---------------------------------------------------------------------------

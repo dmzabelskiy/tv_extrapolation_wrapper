@@ -128,6 +128,27 @@ def _select_isigma_columns(mtz: gemmi.Mtz, mtz_path: Path) -> tuple[str, str, bo
     )
 
 
+def _merge_sparse_shells(shells: list[dict], min_shell_n: int) -> list[dict]:
+    """Merge shells with fewer than min_shell_n reflections into their
+    lower-resolution neighbour so every emitted shell has reliable statistics.
+
+    A sparse shell folds backward into the already-accepted lower-resolution
+    entry.  A sparse leading shell (no lower-resolution neighbour) instead
+    absorbs its higher-resolution neighbour.  Shells are ordered low->high
+    resolution (decreasing dmin).
+    """
+    merged: list[dict] = []
+    for sh in shells:
+        if merged and (sh["n"] < min_shell_n or merged[-1]["n"] < min_shell_n):
+            prev = merged[-1]
+            prev["n"] += sh["n"]
+            prev["sum"] += sh["sum"]
+            prev["dmin"] = min(prev["dmin"], sh["dmin"])
+        else:
+            merged.append(dict(sh))
+    return merged
+
+
 def _isigma_shells(
     d: np.ndarray, isig: np.ndarray, n_shells: int, min_shell_n: int
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -152,21 +173,7 @@ def _isigma_shells(
                 "dmin": float(d[sel].min()),
             }
         )
-    merged: list[dict] = []
-    for sh in shells:
-        if merged and merged[-1]["n"] < min_shell_n:
-            prev = merged[-1]
-            prev["n"] += sh["n"]
-            prev["sum"] += sh["sum"]
-            prev["dmin"] = min(prev["dmin"], sh["dmin"])
-        else:
-            merged.append(dict(sh))
-    while len(merged) > 1 and merged[-1]["n"] < min_shell_n:
-        last = merged.pop()
-        prev = merged[-1]
-        prev["n"] += last["n"]
-        prev["sum"] += last["sum"]
-        prev["dmin"] = min(prev["dmin"], last["dmin"])
+    merged = _merge_sparse_shells(shells, min_shell_n)
     dmin = np.array([m["dmin"] for m in merged])
     mean = np.array([m["sum"] / m["n"] for m in merged])
     return dmin, mean
