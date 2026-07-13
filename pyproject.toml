@@ -6,16 +6,18 @@ build-backend = "setuptools.build_meta"
 name = "tv_extrapolation"
 version = "0.1.0"
 requires-python = ">=3.12"
-# xtr_estimator and meteor are required at runtime but intentionally not
-# listed here: both are installed from git via environment.yml/README
-# (xtr_estimator needs --no-deps to avoid pulling conflicting transitive
-# deps), not from PyPI, so pip can't resolve them as ordinary dependencies.
+# xtr_estimator is required at runtime but is installed from git with
+# --no-deps via environment.yml/README (it is not on PyPI and its pinned
+# transitive deps conflict with this env), so it cannot be an ordinary
+# dependency here.  meteor (PyPI distribution name: meteor-maps) IS on PyPI
+# and is listed below, so a plain `pip install -e .` pulls it too.
 dependencies = [
     "pyyaml",
     "pydantic>=2",
     "numpy",
     "gemmi",
     "reciprocalspaceship",
+    "meteor-maps>=0.4.2",
 ]
 
 [project.optional-dependencies]

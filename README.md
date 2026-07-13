@@ -32,8 +32,19 @@ tv-extrapolate run data/olpvr1_esrf/trapping_1/ground.mtz \
 ```bash
 conda env create -f environment.yml
 conda activate tv-extrapolation
+
+# xtr_estimator is git-only and must be installed WITHOUT its pinned deps
+# (they conflict with this env). meteor (meteor-maps) and everything else
+# are already handled by environment.yml above.
+pip install --no-deps git+https://github.com/cvazz/xtr-estimator.git@main
+
 pip install -e .
 ```
+
+Meteor is published on PyPI as **`meteor-maps`** (it imports as `meteor`) and
+is pinned in `environment.yml`; it is also declared in `pyproject.toml`, so a
+plain `pip install -e .` in any environment pulls it automatically. Only
+`xtr_estimator` needs the manual git step above.
 
 ## CLI Reference
 

@@ -8,8 +8,8 @@ dependencies:
   - pandas
   - matplotlib
   - pip:
-      # v0.4.2 is currently available from GitHub before PyPI.
-      - git+https://github.com/rs-station/meteor.git@v0.4.2
+      # meteor imports as `meteor`; its PyPI distribution name is meteor-maps.
+      - meteor-maps==0.4.2
       - pydantic-settings
       - typer
       - pyqt6
@@ -17,3 +17,5 @@ dependencies:
       - gemmi
       - reciprocalspaceship
       - -e .
+      # NOTE: xtr_estimator is NOT installed here — it is git-only and must be
+      # installed with --no-deps as a separate step (see README Installation).
