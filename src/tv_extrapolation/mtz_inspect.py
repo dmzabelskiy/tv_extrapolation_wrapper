@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from pathlib import Path
 
 import gemmi
@@ -103,148 +102,67 @@ def _match_sigma(data_col: str, sigma_cols: list[str], mtz_path: Path) -> str:
     )
 
 
-# Column pairs used for I/σ analysis, in preference order.  Intensities first:
-# the I/σI >= 2 style criterion is defined on intensities.
-_ISIGMA_INTENSITY_CANDIDATES = (("IMEAN", "SIGIMEAN"), ("I", "SIGI"))
-_ISIGMA_AMPLITUDE_CANDIDATES = (("F", "SIGF"), ("FP", "SIGFP"))
+# Measured (data, sigma) column pairs, in preference order.  Amplitudes (Fobs)
+# first — the resolution limit is the extent of measured structure-factor
+# amplitudes — then intensities for datasets that ship only merged intensities.
+# Only known experimental labels are matched, so calculated/map-coefficient
+# columns (FC, FWT, F-model, 2FOFCWT, …) and free-R flags are never selected.
+_MEASURED_AMPLITUDE_CANDIDATES = (
+    ("F", "SIGF"),
+    ("FP", "SIGFP"),
+    ("F-obs", "SIGF-obs"),
+    ("FOBS", "SIGFOBS"),
+)
+_MEASURED_INTENSITY_CANDIDATES = (("IMEAN", "SIGIMEAN"), ("I", "SIGI"))
 
 
-def _select_isigma_columns(mtz: gemmi.Mtz, mtz_path: Path) -> tuple[str, str, bool]:
-    """Pick (data, sigma, is_intensity) columns for an I/σ cutoff.
-
-    Intensities are preferred over amplitudes.  Returns is_intensity=False when
-    only amplitudes are available so the caller can double the threshold.
-    """
+def _select_measured_columns(mtz: gemmi.Mtz, mtz_path: Path) -> tuple[str, str]:
+    """Pick the (data, sigma) columns of the measured experimental data."""
     labels = {c.label for c in mtz.columns}
-    for data, sigma in _ISIGMA_INTENSITY_CANDIDATES:
+    for data, sigma in _MEASURED_AMPLITUDE_CANDIDATES + _MEASURED_INTENSITY_CANDIDATES:
         if data in labels and sigma in labels:
-            return data, sigma, True
-    for data, sigma in _ISIGMA_AMPLITUDE_CANDIDATES:
-        if data in labels and sigma in labels:
-            return data, sigma, False
+            return data, sigma
     raise ValueError(
-        f"{mtz_path}: no (IMEAN/SIGIMEAN, I/SIGI, F/SIGF, FP/SIGFP) column pair "
-        "for I/σ analysis."
+        f"{mtz_path}: no measured data column pair "
+        "(F/SIGF, FP/SIGFP, F-obs/SIGF-obs, IMEAN/SIGIMEAN, I/SIGI) found."
     )
 
 
-def _merge_sparse_shells(shells: list[dict], min_shell_n: int) -> list[dict]:
-    """Merge shells with fewer than min_shell_n reflections into their
-    lower-resolution neighbour so every emitted shell has reliable statistics.
+def resolution_cutoff_by_measured_extent(mtz_path: Path) -> float:
+    """Highest-resolution limit (Å) with measured data in `mtz_path`.
 
-    A sparse shell folds backward into the already-accepted lower-resolution
-    entry.  A sparse leading shell (no lower-resolution neighbour) instead
-    absorbs its higher-resolution neighbour.  Shells are ordered low->high
-    resolution (decreasing dmin).
-    """
-    merged: list[dict] = []
-    for sh in shells:
-        if merged and (sh["n"] < min_shell_n or merged[-1]["n"] < min_shell_n):
-            prev = merged[-1]
-            prev["n"] += sh["n"]
-            prev["sum"] += sh["sum"]
-            prev["dmin"] = min(prev["dmin"], sh["dmin"])
-        else:
-            merged.append(dict(sh))
-    return merged
-
-
-def _isigma_shells(
-    d: np.ndarray, isig: np.ndarray, n_shells: int, min_shell_n: int
-) -> tuple[np.ndarray, np.ndarray]:
-    """Bin reflections into equal-volume reciprocal shells (low→high res).
-
-    Returns (dmin, mean): dmin[i] is the high-resolution edge (smallest d) of
-    shell i and mean[i] is ⟨I/σ⟩ in that shell.  Shells with fewer than
-    min_shell_n reflections are merged into their lower-resolution neighbour.
-    """
-    x = (1.0 / d) ** 3  # equal-volume coordinate; increases with resolution
-    edges = np.linspace(x.min(), x.max(), n_shells + 1)
-    idx = np.clip(np.digitize(x, edges[1:-1]), 0, n_shells - 1)
-    shells: list[dict] = []
-    for s in range(n_shells):
-        sel = idx == s
-        if not sel.any():
-            continue
-        shells.append(
-            {
-                "n": int(sel.sum()),
-                "sum": float(isig[sel].sum()),
-                "dmin": float(d[sel].min()),
-            }
-        )
-    merged = _merge_sparse_shells(shells, min_shell_n)
-    dmin = np.array([m["dmin"] for m in merged])
-    mean = np.array([m["sum"] / m["n"] for m in merged])
-    return dmin, mean
-
-
-def resolution_cutoff_by_isigma(
-    mtz_path: Path,
-    threshold: float = 1.0,
-    n_shells: int = 20,
-    min_shell_n: int = 50,
-) -> float:
-    """High-resolution cutoff (Å) where ⟨I/σ⟩ drops below `threshold`.
-
-    Only reflections with finite intensity and σ > 0 are used, so NaN-padded HKL
-    rows are ignored.  Intensities are preferred; when only amplitudes are
-    present the threshold is doubled (I/σI ≈ 0.5 · F/σF).
+    Returns the smallest d-spacing among reflections that carry a finite
+    measured amplitude (or intensity) with σ > 0.  Free-R-flag rows and other
+    padded reflections that lack a measured value are excluded, so a complete
+    free-R set generated to the detector edge does not inflate the resolution.
     """
     mtz_path = Path(mtz_path)
     mtz = gemmi.read_mtz_file(str(mtz_path))
-    data_col, sigma_col, is_intensity = _select_isigma_columns(mtz, mtz_path)
+    data_col, sigma_col = _select_measured_columns(mtz, mtz_path)
     labels = [c.label for c in mtz.columns]
     table = np.array(mtz, copy=False)
     d = mtz.make_d_array()
     values = table[:, labels.index(data_col)]
     sigmas = table[:, labels.index(sigma_col)]
-    finite = np.isfinite(values) & np.isfinite(sigmas) & (sigmas > 0)
-    d = d[finite]
-    isig = values[finite] / sigmas[finite]
-    if d.size == 0:
+    measured = np.isfinite(values) & np.isfinite(sigmas) & (sigmas > 0)
+    if not measured.any():
         raise ValueError(
             f"{mtz_path}: no finite {data_col}/{sigma_col} reflections."
         )
-    effective_threshold = threshold if is_intensity else 2.0 * threshold
-    if not is_intensity:
-        warnings.warn(
-            f"{mtz_path}: no intensity columns found; using amplitudes "
-            f"{data_col}/{sigma_col} with an effective F/σ threshold of "
-            f"{effective_threshold}.",
-            stacklevel=2,
-        )
-    dmin, mean = _isigma_shells(d, isig, n_shells, min_shell_n)
-    last_pass: int | None = None
-    for i in range(len(mean)):
-        if mean[i] >= effective_threshold:
-            last_pass = i
-        elif i + 1 >= len(mean) or mean[i + 1] < effective_threshold:
-            break
-    if last_pass is None:
-        warnings.warn(
-            f"{mtz_path}: ⟨I/σ⟩ never reaches {effective_threshold}; "
-            "returning coarsest measured resolution.",
-            stacklevel=2,
-        )
-        return round(float(d.max()), 2)
-    return round(float(dmin[last_pass]), 2)
+    return round(float(d[measured].min()), 2)
 
 
-def detect_resolution_limit(
-    dark_mtz: Path, triggered_mtz: Path, threshold: float = 1.0
-) -> float:
+def detect_resolution_limit(dark_mtz: Path, triggered_mtz: Path) -> float:
     """Return the coarser high-resolution limit (Å) across both MTZ files.
 
-    Each file's cutoff is the resolution where mean ⟨I/σ⟩ falls below `threshold`
-    (computed over measured reflections only).  The coarser of the two — the
-    larger d — is returned so the analysis is restricted to data both datasets
-    support.
+    Each file's limit is the extent of its measured data (see
+    resolution_cutoff_by_measured_extent).  The coarser of the two — the larger
+    d — is returned so the analysis is restricted to data both datasets support.
     """
     return round(
         max(
-            resolution_cutoff_by_isigma(Path(dark_mtz), threshold),
-            resolution_cutoff_by_isigma(Path(triggered_mtz), threshold),
+            resolution_cutoff_by_measured_extent(Path(dark_mtz)),
+            resolution_cutoff_by_measured_extent(Path(triggered_mtz)),
         ),
         2,
     )

@@ -28,7 +28,6 @@ class DatasetConfig(BaseModel):
     triggered_mtz: Path
     pdb_dark: Path
     resolution_limit: float | None = None
-    isigma_cutoff: float = 1.0
     columns: dict[str, ColumnSpec]
     rewrite_pdb_cell: bool = False
     phenix_refine_cell: bool = False
@@ -44,7 +43,7 @@ class DatasetConfig(BaseModel):
         if self.resolution_limit is None:
             from .mtz_inspect import detect_resolution_limit
             self.resolution_limit = detect_resolution_limit(
-                self.dark_mtz, self.triggered_mtz, threshold=self.isigma_cutoff
+                self.dark_mtz, self.triggered_mtz
             )
         return self
 
@@ -63,7 +62,6 @@ class DatasetConfig(BaseModel):
         *,
         name: str | None = None,
         resolution_limit: float | None = None,
-        isigma_cutoff: float = 1.0,
         output_dir: Path | str = Path("results"),
         scaling_loss: Literal["huber", "linear", "huber_safe"] = "huber",
         finite_filter: bool = False,
@@ -95,7 +93,6 @@ class DatasetConfig(BaseModel):
             triggered_mtz=triggered_mtz,
             pdb_dark=pdb_dark,
             resolution_limit=resolution_limit,
-            isigma_cutoff=isigma_cutoff,
             columns={"dark": dark_col, "triggered": triggered_col},
             output_dir=Path(output_dir),
             scaling_loss=scaling_loss,

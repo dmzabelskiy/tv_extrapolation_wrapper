@@ -69,15 +69,6 @@ def main(argv: list[str] | None = None) -> int:
         help="High-resolution cutoff in Å (default: coarser of the two MTZ files)",
     )
     dm.add_argument(
-        "--isigma-cutoff",
-        type=float,
-        default=1.0,
-        dest="isigma_cutoff",
-        metavar="THRESH",
-        help="Mean I/σ threshold for auto-detecting resolution (default: 1.0). "
-        "Ignored when --resolution is given.",
-    )
-    dm.add_argument(
         "--output",
         type=Path,
         default=None,
@@ -167,7 +158,6 @@ def main(argv: list[str] | None = None) -> int:
                 pdb,
                 name=args.name,
                 resolution_limit=args.resolution,
-                isigma_cutoff=args.isigma_cutoff,
                 output_dir=args.output or Path("results"),
                 scaling_loss=args.scaling_loss,
                 finite_filter=args.finite_filter,
