@@ -85,8 +85,10 @@ tv-extrapolate scan GROUND_PDB EXTRAP_PDB TRIGGERED_MTZ --out-dir DIR
 
 ## Dataset Config Format
 
-A minimal dataset YAML. Only `columns` must be specified; `resolution_limit` is auto-detected
-as the coarser high-resolution limit across both MTZ files if omitted:
+A minimal dataset YAML. Only `columns` must be specified. When `resolution_limit` is omitted it
+is auto-detected as the coarser of the two files' **measured-data extent** — the finest d-spacing
+carrying a real Fobs/intensity with σ > 0 — so free-R-flag reflections padded to the detector edge
+never inflate it:
 
 ```yaml
 name: my_dataset
@@ -114,7 +116,7 @@ All available fields:
 | `triggered_mtz` | path | required | Laser/triggered MTZ |
 | `pdb_dark` | path | required | Ground-state refined model |
 | `output_dir` | path | required | Where to write results |
-| `resolution_limit` | float | auto | High-resolution cutoff (Å); defaults to coarser of the two MTZs |
+| `resolution_limit` | float | auto | High-resolution cutoff (Å); when omitted, the coarser of the two files' measured-data extent (finite Fobs/intensity, σ > 0; ignores free-R padding) |
 | `columns` | dict | required | Column spec (see below) |
 | `scaling_loss` | str | `huber` | `huber`, `linear`, or `huber_safe` |
 | `finite_filter` | bool | false | Drop non-finite reflections before scaling |
