@@ -5,12 +5,19 @@ is not present (CI / fresh clone).
 """
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
+import gemmi
+import numpy as np
 import pytest
 
 from tv_extrapolation.config import DatasetConfig
-from tv_extrapolation.mtz_inspect import detect_column_spec, detect_resolution_limit
+from tv_extrapolation.mtz_inspect import (
+    detect_column_spec,
+    detect_resolution_limit,
+    resolution_cutoff_by_isigma,
+)
 
 # ---------------------------------------------------------------------------
 # Paths to test data
@@ -35,6 +42,74 @@ have_xfel_pdb = pytest.mark.skipif(
     not (XFEL_DARK.exists() and XFEL_TRIGGERED.exists() and XFEL_PDB.exists()),
     reason="XFEL test data not available",
 )
+
+
+# ---------------------------------------------------------------------------
+# resolution_cutoff_by_isigma (synthetic MTZ)
+# ---------------------------------------------------------------------------
+
+
+def _write_synthetic_mtz(
+    path,
+    *,
+    finite_dmin,
+    drop_below=None,
+    drop_value=0.2,
+    pad_dmin=None,
+    high=10.0,
+    cell_a=50.0,
+    hkl_max=25,
+    amplitude=False,
+):
+    """Write a cubic P1 MTZ with a controllable ⟨I/σ⟩ vs resolution profile.
+
+    - Reflections with d >= finite_dmin get value `high` (σ = 1 → I/σ = high).
+    - If `drop_below` is set, reflections with finite_dmin <= d < drop_below get
+      `drop_value` instead (weak shell).
+    - If `pad_dmin` is set, reflections with pad_dmin <= d < finite_dmin get a
+      NaN value (unmeasured / padded HKL rows).
+    """
+    cell = gemmi.UnitCell(cell_a, cell_a, cell_a, 90, 90, 90)
+    rows = []
+    for h in range(-hkl_max, hkl_max + 1):
+        for k in range(-hkl_max, hkl_max + 1):
+            for l in range(0, hkl_max + 1):
+                s = h * h + k * k + l * l
+                if s == 0:
+                    continue
+                d = cell_a / math.sqrt(s)
+                if d > 60.0:
+                    continue
+                if d >= finite_dmin:
+                    value = high
+                    if drop_below is not None and d < drop_below:
+                        value = drop_value
+                elif pad_dmin is not None and d >= pad_dmin:
+                    value = float("nan")
+                else:
+                    continue
+                rows.append((h, k, l, value, 1.0))
+    arr = np.array(rows, dtype=float)
+    mtz = gemmi.Mtz(with_base=True)
+    mtz.spacegroup = gemmi.SpaceGroup("P 1")
+    mtz.set_cell_for_all(cell)
+    mtz.add_dataset("syn")
+    if amplitude:
+        mtz.add_column("F", "F")
+        mtz.add_column("SIGF", "Q")
+    else:
+        mtz.add_column("IMEAN", "J")
+        mtz.add_column("SIGIMEAN", "Q")
+    mtz.set_data(arr)
+    mtz.write_to_file(str(path))
+    return path
+
+
+def test_isigma_step_cutoff(tmp_path):
+    """Strong data above 2.5 Å, weak below → cutoff near 2.5 Å."""
+    p = _write_synthetic_mtz(tmp_path / "step.mtz", finite_dmin=2.0, drop_below=2.5)
+    cutoff = resolution_cutoff_by_isigma(p, threshold=1.0)
+    assert 2.2 < cutoff < 2.8
 
 
 # ---------------------------------------------------------------------------
@@ -140,3 +215,48 @@ def test_from_files_overrides():
     assert config.scaling_loss == "linear"
     assert config.finite_filter
     assert config.rewrite_pdb_cell
+
+
+def test_isigma_ignores_nan_padding(tmp_path):
+    """Strong data to 2.5 Å, NaN-padded rows to 1.2 Å → cutoff ≈ 2.5, not ~1.2."""
+    p = _write_synthetic_mtz(
+        tmp_path / "padded.mtz", finite_dmin=2.5, pad_dmin=1.2
+    )
+    # sanity: the file's reflection-list extent really is ~1.2 Å
+    assert gemmi.read_mtz_file(str(p)).resolution_high() < 1.4
+    cutoff = resolution_cutoff_by_isigma(p, threshold=1.0)
+    assert cutoff > 2.0
+    assert cutoff < 2.9
+
+
+def test_isigma_strong_data_returns_finest(tmp_path):
+    """Strong I/σ in every shell → finest measured d_min (~2.0 Å)."""
+    p = _write_synthetic_mtz(tmp_path / "strong.mtz", finite_dmin=2.0)
+    cutoff = resolution_cutoff_by_isigma(p, threshold=1.0)
+    assert 1.9 < cutoff < 2.2
+
+
+def test_isigma_all_noise_warns(tmp_path):
+    """No shell reaches threshold → warns and returns a coarse limit."""
+    p = _write_synthetic_mtz(
+        tmp_path / "noise.mtz", finite_dmin=2.0, drop_below=100.0, drop_value=0.2
+    )
+    with pytest.warns(UserWarning):
+        cutoff = resolution_cutoff_by_isigma(p, threshold=1.0)
+    assert cutoff > 5.0  # coarsest measured resolution
+
+
+def test_isigma_amplitude_fallback(tmp_path):
+    """Amplitude-only MTZ uses a 2× effective threshold.
+
+    F/σF = 10 (>2) passes above 2.5 Å; F/σF = 1.5 (<2) fails below → cut ≈ 2.5.
+    """
+    p = _write_synthetic_mtz(
+        tmp_path / "amp.mtz",
+        finite_dmin=2.0,
+        drop_below=2.5,
+        drop_value=1.5,
+        amplitude=True,
+    )
+    cutoff = resolution_cutoff_by_isigma(p, threshold=1.0)
+    assert 2.2 < cutoff < 2.8

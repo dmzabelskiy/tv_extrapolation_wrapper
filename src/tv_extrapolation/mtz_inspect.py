@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import warnings
 from pathlib import Path
 
 import gemmi
+import numpy as np
 
 from .config import ColumnSpec
 
@@ -99,6 +101,120 @@ def _match_sigma(data_col: str, sigma_cols: list[str], mtz_path: Path) -> str:
         f"{mtz_path}: multiple sigma columns {sigma_cols} and none matches "
         f"'SIG{data_col}'. Specify columns explicitly via a dataset YAML."
     )
+
+
+# Column pairs used for I/σ analysis, in preference order.  Intensities first:
+# the I/σI >= 2 style criterion is defined on intensities.
+_ISIGMA_INTENSITY_CANDIDATES = (("IMEAN", "SIGIMEAN"), ("I", "SIGI"))
+_ISIGMA_AMPLITUDE_CANDIDATES = (("F", "SIGF"), ("FP", "SIGFP"))
+
+
+def _select_isigma_columns(mtz: gemmi.Mtz, mtz_path: Path) -> tuple[str, str, bool]:
+    """Pick (data, sigma, is_intensity) columns for an I/σ cutoff.
+
+    Intensities are preferred over amplitudes.  Returns is_intensity=False when
+    only amplitudes are available so the caller can double the threshold.
+    """
+    labels = {c.label for c in mtz.columns}
+    for data, sigma in _ISIGMA_INTENSITY_CANDIDATES:
+        if data in labels and sigma in labels:
+            return data, sigma, True
+    for data, sigma in _ISIGMA_AMPLITUDE_CANDIDATES:
+        if data in labels and sigma in labels:
+            return data, sigma, False
+    raise ValueError(
+        f"{mtz_path}: no (IMEAN/SIGIMEAN, I/SIGI, F/SIGF, FP/SIGFP) column pair "
+        "for I/σ analysis."
+    )
+
+
+def _isigma_shells(
+    d: np.ndarray, isig: np.ndarray, n_shells: int, min_shell_n: int
+) -> tuple[np.ndarray, np.ndarray]:
+    """Bin reflections into equal-volume reciprocal shells (low→high res).
+
+    Returns (dmin, mean): dmin[i] is the high-resolution edge (smallest d) of
+    shell i and mean[i] is ⟨I/σ⟩ in that shell.  Shells with fewer than
+    min_shell_n reflections are merged into their lower-resolution neighbour.
+    """
+    x = (1.0 / d) ** 3  # equal-volume coordinate; increases with resolution
+    edges = np.linspace(x.min(), x.max(), n_shells + 1)
+    idx = np.clip(np.digitize(x, edges[1:-1]), 0, n_shells - 1)
+    shells: list[dict] = []
+    for s in range(n_shells):
+        sel = idx == s
+        if not sel.any():
+            continue
+        shells.append(
+            {
+                "n": int(sel.sum()),
+                "sum": float(isig[sel].sum()),
+                "dmin": float(d[sel].min()),
+            }
+        )
+    merged: list[dict] = []
+    for sh in shells:
+        if merged and merged[-1]["n"] < min_shell_n:
+            prev = merged[-1]
+            prev["n"] += sh["n"]
+            prev["sum"] += sh["sum"]
+            prev["dmin"] = min(prev["dmin"], sh["dmin"])
+        else:
+            merged.append(dict(sh))
+    while len(merged) > 1 and merged[-1]["n"] < min_shell_n:
+        last = merged.pop()
+        prev = merged[-1]
+        prev["n"] += last["n"]
+        prev["sum"] += last["sum"]
+        prev["dmin"] = min(prev["dmin"], last["dmin"])
+    dmin = np.array([m["dmin"] for m in merged])
+    mean = np.array([m["sum"] / m["n"] for m in merged])
+    return dmin, mean
+
+
+def resolution_cutoff_by_isigma(
+    mtz_path: Path,
+    threshold: float = 1.0,
+    n_shells: int = 20,
+    min_shell_n: int = 50,
+) -> float:
+    """High-resolution cutoff (Å) where ⟨I/σ⟩ drops below `threshold`.
+
+    Only reflections with finite intensity and σ > 0 are used, so NaN-padded HKL
+    rows are ignored.  Intensities are preferred; when only amplitudes are
+    present the threshold is doubled (I/σI ≈ 0.5 · F/σF).
+    """
+    mtz_path = Path(mtz_path)
+    mtz = gemmi.read_mtz_file(str(mtz_path))
+    data_col, sigma_col, is_intensity = _select_isigma_columns(mtz, mtz_path)
+    labels = [c.label for c in mtz.columns]
+    table = np.array(mtz, copy=False)
+    d = mtz.make_d_array()
+    values = table[:, labels.index(data_col)]
+    sigmas = table[:, labels.index(sigma_col)]
+    finite = np.isfinite(values) & np.isfinite(sigmas) & (sigmas > 0)
+    d = d[finite]
+    isig = values[finite] / sigmas[finite]
+    if d.size == 0:
+        raise ValueError(
+            f"{mtz_path}: no finite {data_col}/{sigma_col} reflections."
+        )
+    effective_threshold = threshold if is_intensity else 2.0 * threshold
+    dmin, mean = _isigma_shells(d, isig, n_shells, min_shell_n)
+    last_pass: int | None = None
+    for i in range(len(mean)):
+        if mean[i] >= effective_threshold:
+            last_pass = i
+        elif i + 1 >= len(mean) or mean[i + 1] < effective_threshold:
+            break
+    if last_pass is None:
+        warnings.warn(
+            f"{mtz_path}: ⟨I/σ⟩ never reaches {effective_threshold}; "
+            "returning coarsest measured resolution.",
+            stacklevel=2,
+        )
+        return round(float(d.max()), 2)
+    return round(float(dmin[last_pass]), 2)
 
 
 def detect_resolution_limit(dark_mtz: Path, triggered_mtz: Path) -> float:
