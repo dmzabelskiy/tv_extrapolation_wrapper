@@ -335,3 +335,41 @@ def test_isigma_cutoff_test_ground_not_padded():
     cutoff = resolution_cutoff_by_isigma(DATA_TEST_GROUND, threshold=1.0)
     assert cutoff > 1.5  # not 1.13
     assert 1.7 < cutoff < 2.2
+
+
+from tv_extrapolation.config import DatasetConfig
+
+
+@have_9_39
+def test_config_resolves_resolution_via_isigma():
+    """A YAML-less config with no resolution_limit auto-detects via I/σ."""
+    dark_spec = detect_column_spec(DATA_9_39_DARK)
+    trig_spec = detect_column_spec(DATA_9_39_TRIG)
+    config = DatasetConfig(
+        name="9-39-auto",
+        dark_mtz=DATA_9_39_DARK,
+        triggered_mtz=DATA_9_39_TRIG,
+        pdb_dark=DATA_9_39_DARK,  # any path; not read during resolution resolve
+        columns={"dark": dark_spec, "triggered": trig_spec},
+        output_dir=Path("results"),
+    )
+    assert config.isigma_cutoff == 1.0
+    assert config.resolution_limit is not None
+    assert config.resolution_limit > 2.0  # not 1.13
+
+
+@have_9_39
+def test_config_explicit_resolution_wins():
+    """An explicit resolution_limit is never overridden by the detector."""
+    dark_spec = detect_column_spec(DATA_9_39_DARK)
+    trig_spec = detect_column_spec(DATA_9_39_TRIG)
+    config = DatasetConfig(
+        name="9-39-explicit",
+        dark_mtz=DATA_9_39_DARK,
+        triggered_mtz=DATA_9_39_TRIG,
+        pdb_dark=DATA_9_39_DARK,
+        resolution_limit=2.58,
+        columns={"dark": dark_spec, "triggered": trig_spec},
+        output_dir=Path("results"),
+    )
+    assert config.resolution_limit == 2.58
