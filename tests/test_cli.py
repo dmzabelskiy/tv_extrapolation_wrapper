@@ -153,3 +153,16 @@ def test_run_bad_config_records_error_row(tmp_path):
     assert rows[0]["condition"] == "bad"
     assert rows[0]["status"] == "error"
     assert "config error" in rows[0]["error"]
+
+
+def test_truncate_subcommand(tmp_path, capsys):
+    from test_mtz_inspect import _write_synthetic_mtz
+
+    src = _write_synthetic_mtz(
+        tmp_path / "in.mtz", finite_dmin=2.0, pad_dmin=1.2, amplitude=True
+    )
+    out = tmp_path / "out.mtz"
+    exit_code = main(["truncate", str(src), str(out), "--dmin", "2.5"])
+    assert exit_code == 0
+    assert out.exists()
+    assert "kept" in capsys.readouterr().out

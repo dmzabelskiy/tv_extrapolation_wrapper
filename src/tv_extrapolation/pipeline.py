@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import contextlib
 import hashlib
+import json
 import math
+import os
 import shutil
 import subprocess
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -244,6 +247,57 @@ def _run_occupancy_scan(
     return best_x, best_rfree, csv_path, plot_path
 
 
+_PROVENANCE_FILE = "diffmap_provenance.json"
+
+
+def _diffmap_cache_files(condition_dir: Path) -> list[Path]:
+    """xtr_estimator's cached TV diffmaps + parameter pickles in condition_dir."""
+    return sorted(condition_dir.glob("diffmap_[0-9]*_it_tv_*.mtz")) + sorted(
+        condition_dir.glob("diffmap_config_*.pkl")
+    )
+
+
+def _cache_provenance(config: DatasetConfig) -> dict:
+    cols = {k: [v.kind, v.amplitude_or_intensity, v.sigma] for k, v in config.columns.items()}
+    return {
+        "dark_mtz": str(config.dark_mtz),
+        "triggered_mtz": str(config.triggered_mtz),
+        "resolution_limit": config.resolution_limit,
+        "scaling_loss": config.scaling_loss,
+        "finite_filter": config.finite_filter,
+        "columns": cols,
+    }
+
+
+def _sync_diffmap_cache(condition_dir: Path, config: DatasetConfig, fresh: bool) -> None:
+    """Make xtr_estimator's diffmap cache reuse deterministic.
+
+    Upstream reuses a cached diffmap only when it is less than 24h newer than
+    the cwd's mtime — an accident of when directories were last touched.  We
+    track what produced the cache in a provenance sidecar: when it matches the
+    current config, the cache files' mtimes are bumped so upstream always
+    reuses them; when it mismatches (or --fresh is given), they are deleted so
+    the diffmap is recomputed.  A cache without a sidecar predates provenance
+    tracking and is adopted as matching the current config.
+    """
+    caches = _diffmap_cache_files(condition_dir)
+    sidecar = condition_dir / _PROVENANCE_FILE
+    provenance = _cache_provenance(config)
+
+    if fresh or (
+        sidecar.is_file() and json.loads(sidecar.read_text()) != provenance
+    ):
+        for f in caches:
+            f.unlink()
+        caches = []
+
+    if caches:
+        now = time.time()
+        for f in caches:
+            os.utime(f, (now, now))
+    sidecar.write_text(json.dumps(provenance, indent=1))
+
+
 def _align_reference_style_inputs(
     unscaled_dark: Map,
     unscaled_triggered: Map,
@@ -297,6 +351,7 @@ class EstimationResult:
     diffmap_mtz: str
     extrapolated_mtz: str
     extrapolated_ccp4: str
+    scaling_loss: str = ""
     phenix_ready_mtz: str = ""
     scan_best_x: float | None = None
     scan_best_rfree: float | None = None
@@ -316,6 +371,7 @@ class EstimationResult:
             "chi": _fmt(self.chi),
             "std": _fmt(self.std),
             "extrapolation_factor": _fmt(self.extrapolation_factor),
+            "scaling_loss": self.scaling_loss,
             "dark_finite": self.dark_finite,
             "dark_nonfinite": self.dark_nonfinite,
             "triggered_finite": self.triggered_finite,
@@ -332,9 +388,37 @@ class EstimationResult:
         }
 
 
-def run(config: DatasetConfig) -> EstimationResult:
+def _scaling_retry_reason(result: EstimationResult) -> str | None:
+    """A failure mode that a linear-scaling retry can plausibly fix."""
+    if result.status == "nan":
+        return "chi estimate is nan"
+    if result.status == "error" and (
+        "IndexError" in result.error or "boolean index" in result.error
+    ):
+        return "scaling crashed in the Huber loss"
+    return None
+
+
+def run(config: DatasetConfig, fresh: bool = False) -> EstimationResult:
+    """Run the pipeline; on a scaling-related failure retry once with linear loss."""
+    result = _run_once(config, fresh)
+    reason = _scaling_retry_reason(result)
+    if reason is not None and config.scaling_loss != "linear":
+        print(
+            f"WARNING: {config.name}: {reason} with scaling_loss="
+            f"{config.scaling_loss}; retrying with linear scaling"
+        )
+        nan_diffmap = config.condition_dir / f"{config.name}_it_tv_diffmap_xtr_nan.mtz"
+        nan_diffmap.unlink(missing_ok=True)
+        retry_config = config.model_copy(update={"scaling_loss": "linear"})
+        result = _run_once(retry_config, fresh)
+    return result
+
+
+def _run_once(config: DatasetConfig, fresh: bool = False) -> EstimationResult:
     condition_dir = config.condition_dir
     condition_dir.mkdir(parents=True, exist_ok=True)
+    _sync_diffmap_cache(condition_dir, config, fresh)
 
     if config.rewrite_pdb_cell or config.phenix_refine_cell:
         corrected_pdb = _rewrite_pdb_cell(config.pdb_dark, config.dark_mtz, condition_dir)
@@ -395,6 +479,7 @@ def run(config: DatasetConfig) -> EstimationResult:
                 diffmap_mtz="",
                 extrapolated_mtz="",
                 extrapolated_ccp4="",
+                scaling_loss=config.scaling_loss,
                 error=f"{type(exc).__name__}: {exc}",
             )
 
@@ -416,6 +501,7 @@ def run(config: DatasetConfig) -> EstimationResult:
             diffmap_mtz=str(diffmap_path),
             extrapolated_mtz="",
             extrapolated_ccp4="",
+            scaling_loss=config.scaling_loss,
         )
 
     assert factor is not None
@@ -467,6 +553,7 @@ def run(config: DatasetConfig) -> EstimationResult:
         diffmap_mtz=str(diffmap_path),
         extrapolated_mtz=str(mtz_path),
         extrapolated_ccp4=str(ccp4_path),
+        scaling_loss=config.scaling_loss,
         phenix_ready_mtz=str(phenix_path),
         scan_best_x=scan_best_x,
         scan_best_rfree=scan_best_rfree,

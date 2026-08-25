@@ -73,6 +73,23 @@ Direct-mode options: `--name`, `--resolution Å`, `--output DIR`,
 `--scaling-loss {huber,linear,huber_safe}`, `--finite-filter`, `--rewrite-pdb-cell`,
 `--phenix-refine-cell`, `--phenix-bin PATH`.
 
+The TV diffmap is cached per dataset (`diffmap_*_it_tv_*.mtz` + a
+`diffmap_provenance.json` sidecar recording what produced it): re-running with
+an unchanged config reuses it deterministically; a config change or `--fresh`
+recomputes it. If scaling crashes in the Huber loss or the chi estimate is nan,
+the run is automatically retried once with `linear` scaling — the summary's
+`scaling_loss` column records what actually produced each row.
+
+### `tv-extrapolate truncate`
+
+Writes a cleaned copy of an MTZ: cut by resolution and (by default) drop rows
+whose measured data/sigma pair is non-finite or has σ ≤ 0 — free-R padding and
+corrupt placeholder values.
+
+```
+tv-extrapolate truncate IN.mtz OUT.mtz [--dmin Å] [--dmax Å] [--keep-unmeasured]
+```
+
 ### `tv-extrapolate refine-extrap`
 
 Refines the dark model against the extrapolated MTZ to produce an excited-state model.
@@ -103,7 +120,9 @@ tv-extrapolate scan GROUND_PDB EXTRAP_PDB TRIGGERED_MTZ --out-dir DIR
 A minimal dataset YAML. Only `columns` must be specified. When `resolution_limit` is omitted it
 is auto-detected as the coarser of the two files' **measured-data extent** — the finest d-spacing
 carrying a real Fobs/intensity with σ > 0 — so free-R-flag reflections padded to the detector edge
-never inflate it:
+never inflate it. A junk guard additionally checks per-shell completeness: if the footprint
+collapses to ~0 and then resurrects at higher resolution (corrupt values written past the real
+data), the limit is pulled back to the last well-measured shell with a warning:
 
 ```yaml
 name: my_dataset
@@ -133,7 +152,7 @@ All available fields:
 | `output_dir` | path | required | Where to write results |
 | `resolution_limit` | float | auto | High-resolution cutoff (Å); when omitted, the coarser of the two files' measured-data extent (finite Fobs/intensity, σ > 0; ignores free-R padding) |
 | `columns` | dict | required | Column spec (see below) |
-| `scaling_loss` | str | `huber` | `huber`, `linear`, or `huber_safe` |
+| `scaling_loss` | str | `huber_safe` | `huber`, `linear`, or `huber_safe` (huber_safe = huber plus a fix for the shrinking-residual crash; on a scaling crash or nan chi the run auto-retries with `linear`) |
 | `finite_filter` | bool | false | Drop non-finite reflections before scaling |
 | `rewrite_pdb_cell` | bool | false | Copy MTZ cell into PDB CRYST1 |
 | `phenix_refine_cell` | bool | false | Run phenix rigid-body after cell rewrite |
@@ -220,5 +239,6 @@ examples/init/
 
 - Phenix not in PATH: pass `--phenix-bin /path/to/phenix-2.0/bin/phenix.refine` (or set
   `phenix_bin:` / `occupancy_scan.phenix_bin:` in the dataset YAML)
-- Some datasets require `scaling_loss: huber_safe` when standard Huber fails (e.g. `trapping_1`, `trapping_2`)
+- A few datasets need `scaling_loss: linear` (e.g. `ech_405_cryo`); the automatic linear
+  retry handles this, but pinning it in the YAML skips the wasted first attempt
 - Column names vary by dataset — verify MTZ headers match `columns:` in your config (`F`/`SIGF` vs `F-obs`/`SIGF-obs`)

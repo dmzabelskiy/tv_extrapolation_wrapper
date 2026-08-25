@@ -33,7 +33,10 @@ class DatasetConfig(BaseModel):
     phenix_refine_cell: bool = False
     phenix_bin: str = "phenix.refine"
     finite_filter: bool = False
-    scaling_loss: Literal["huber", "linear", "huber_safe"] = "huber"
+    # huber_safe behaves identically to huber unless the residual vector
+    # shrinks mid-optimization — which is exactly when plain huber crashes —
+    # so it is the safe default.
+    scaling_loss: Literal["huber", "linear", "huber_safe"] = "huber_safe"
     occupancy_scan: OccupancyScanConfig | None = None
     estimation: dict = Field(default_factory=dict)
     masking: dict = Field(default_factory=dict)
@@ -76,7 +79,7 @@ class DatasetConfig(BaseModel):
         name: str | None = None,
         resolution_limit: float | None = None,
         output_dir: Path | str = Path("results"),
-        scaling_loss: Literal["huber", "linear", "huber_safe"] = "huber",
+        scaling_loss: Literal["huber", "linear", "huber_safe"] = "huber_safe",
         finite_filter: bool = False,
         rewrite_pdb_cell: bool = False,
         phenix_refine_cell: bool = False,

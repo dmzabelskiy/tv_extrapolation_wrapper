@@ -128,15 +128,7 @@ def _select_measured_columns(mtz: gemmi.Mtz, mtz_path: Path) -> tuple[str, str]:
     )
 
 
-def resolution_cutoff_by_measured_extent(mtz_path: Path) -> float:
-    """Highest-resolution limit (Å) with measured data in `mtz_path`.
-
-    Returns the smallest d-spacing among reflections that carry a finite
-    measured amplitude (or intensity) with σ > 0.  Free-R-flag rows and other
-    padded reflections that lack a measured value are excluded, so a complete
-    free-R set generated to the detector edge does not inflate the resolution.
-    """
-    mtz_path = Path(mtz_path)
+def _measured_mask_and_d(mtz_path: Path) -> tuple[np.ndarray, np.ndarray, gemmi.Mtz]:
     mtz = gemmi.read_mtz_file(str(mtz_path))
     data_col, sigma_col = _select_measured_columns(mtz, mtz_path)
     labels = [c.label for c in mtz.columns]
@@ -149,7 +141,132 @@ def resolution_cutoff_by_measured_extent(mtz_path: Path) -> float:
         raise ValueError(
             f"{mtz_path}: no finite {data_col}/{sigma_col} reflections."
         )
-    return round(float(d[measured].min()), 2)
+    return measured, d, mtz
+
+
+def resolution_cutoff_by_measured_extent(
+    mtz_path: Path, *, min_completeness: float = 0.9, n_shells: int = 40
+) -> float:
+    """Highest-resolution limit (Å) with well-measured data in `mtz_path`.
+
+    Base rule: the smallest d-spacing among reflections carrying a finite
+    measured amplitude (or intensity) with σ > 0, so free-R rows padded to the
+    detector edge never inflate the limit.
+
+    Junk guard: a legitimate footprint decays monotonically to its extent —
+    smooth or sparse anisotropic tails keep the extent behavior.  When shell
+    completeness collapses to ~0 and then *resurrects* deeper (garbage values
+    written past the real data, e.g. by a broken truncate step), the limit is
+    pulled back to the last shell with completeness >= `min_completeness`
+    before the collapse, and a warning names the discarded reflections.
+    """
+    mtz_path = Path(mtz_path)
+    measured, d, _ = _measured_mask_and_d(mtz_path)
+    extent = float(d[measured].min())
+
+    if measured.all():
+        return round(extent, 2)
+
+    # Shells of equal reciprocal volume over the region above the raw extent.
+    # Rows below the extent (free-R padding past the data) are never measured
+    # and must not count against shell completeness.
+    region = d >= extent - 1e-9
+    d = d[region]
+    measured = measured[region]
+    s3 = 1.0 / d**3
+    edges = np.linspace(s3.min(), s3.max(), n_shells + 1)
+    edges[-1] = np.nextafter(edges[-1], np.inf)
+    shell_of = np.digitize(s3, edges) - 1
+
+    shells = []
+    for shell in range(n_shells):
+        sel = shell_of == shell
+        if sel.any():
+            shells.append((shell, float(measured[sel].mean())))
+
+    collapse_floor = 0.05
+    collapsed_at = None
+    resurrected = False
+    for shell, completeness in shells:
+        if collapsed_at is None:
+            if completeness < collapse_floor:
+                collapsed_at = shell
+        elif completeness >= 2 * collapse_floor:
+            resurrected = True
+            break
+    if not resurrected:
+        return round(extent, 2)
+
+    first_bad = next(
+        (s for s, c in shells if s < collapsed_at and c < min_completeness),
+        collapsed_at,
+    )
+    passing = measured & (shell_of < first_bad)
+    if not passing.any():
+        passing = measured & (shell_of < collapsed_at)
+    if not passing.any():
+        raise ValueError(
+            f"{mtz_path}: measured data collapses and resurrects with no "
+            "trustworthy region before the collapse."
+        )
+    cutoff = float(d[passing].min())
+    beyond = measured & (shell_of >= first_bad)
+    if beyond.any():
+        import warnings
+        warnings.warn(
+            f"{mtz_path}: {int(beyond.sum())} measured reflections beyond "
+            f"{cutoff:.2f} Å ignored (completeness collapses and resurrects — "
+            "corrupt high-resolution values)",
+            stacklevel=2,
+        )
+    return round(cutoff, 2)
+
+
+def truncate_mtz(
+    in_path: Path,
+    out_path: Path,
+    *,
+    dmin: float | None = None,
+    dmax: float | None = None,
+    drop_unmeasured: bool = True,
+) -> dict:
+    """Write a copy of `in_path` keeping only reflections inside [dmin, dmax].
+
+    With `drop_unmeasured` (default), rows whose measured data/sigma pair is
+    non-finite or has σ ≤ 0 are removed as well — this strips free-R padding
+    and corrupt placeholder values.  All columns are carried over unchanged.
+    Returns a stats dict (kept, total, dmin, dmax of the output).
+    """
+    in_path, out_path = Path(in_path), Path(out_path)
+    measured, d, mtz = _measured_mask_and_d(in_path)
+    table = np.array(mtz, copy=True)
+
+    keep = np.ones(len(table), dtype=bool)
+    if drop_unmeasured:
+        keep &= measured
+    if dmin is not None:
+        keep &= d >= dmin
+    if dmax is not None:
+        keep &= d <= dmax
+    if not keep.any():
+        raise ValueError(f"{in_path}: no reflections left after truncation.")
+
+    out = gemmi.Mtz(with_base=True)
+    out.spacegroup = mtz.spacegroup
+    out.cell = mtz.cell
+    out.title = f"{in_path.name} truncated (dmin={dmin}, dmax={dmax})"
+    out.add_dataset("truncated")
+    for col in mtz.columns:
+        if col.label not in ("H", "K", "L"):
+            out.add_column(col.label, col.type)
+    out.set_data(table[keep])
+    out.write_to_file(str(out_path))
+    return {
+        "kept": int(keep.sum()),
+        "total": int(len(table)),
+        "dmin": round(float(d[keep].min()), 3),
+        "dmax": round(float(d[keep].max()), 1),
+    }
 
 
 def detect_resolution_limit(dark_mtz: Path, triggered_mtz: Path) -> float:

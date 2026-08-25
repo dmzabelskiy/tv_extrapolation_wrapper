@@ -93,6 +93,12 @@ def main(argv: list[str] | None = None) -> int:
         default=Path("results/summary.csv"),
         help="Output summary CSV path (default: results/summary.csv)",
     )
+    run_parser.add_argument(
+        "--fresh",
+        action="store_true",
+        default=False,
+        help="Recompute the TV diffmap even when a matching cached one exists",
+    )
 
     # Direct-mode overrides (ignored in YAML mode)
     dm = run_parser.add_argument_group("direct-mode options (dark.mtz triggered.mtz pdb)")
@@ -119,9 +125,9 @@ def main(argv: list[str] | None = None) -> int:
     dm.add_argument(
         "--scaling-loss",
         choices=["huber", "linear", "huber_safe"],
-        default="huber",
+        default="huber_safe",
         dest="scaling_loss",
-        help="Scaling loss function (default: huber)",
+        help="Scaling loss function (default: huber_safe)",
     )
     dm.add_argument(
         "--finite-filter",
@@ -151,6 +157,23 @@ def main(argv: list[str] | None = None) -> int:
         dest="phenix_bin",
         help="Path to phenix.refine (used by --phenix-refine-cell; default: phenix.refine from PATH)",
     )
+
+    # --- truncate subcommand ---
+    tr_parser = subparsers.add_parser(
+        "truncate",
+        help="Write a cleaned copy of an MTZ: cut by resolution and drop rows "
+             "without measured data (free-R padding, corrupt placeholders).",
+    )
+    tr_parser.add_argument("in_mtz", type=Path, help="Input MTZ")
+    tr_parser.add_argument("out_mtz", type=Path, help="Output MTZ")
+    tr_parser.add_argument("--dmin", type=float, default=None, metavar="Å",
+                           help="High-resolution cutoff (keep d >= dmin)")
+    tr_parser.add_argument("--dmax", type=float, default=None, metavar="Å",
+                           help="Low-resolution cutoff (keep d <= dmax)")
+    tr_parser.add_argument("--keep-unmeasured", action="store_true", default=False,
+                           dest="keep_unmeasured",
+                           help="Keep rows whose measured data/sigma is non-finite "
+                                "or σ <= 0 (default: drop them)")
 
     # --- refine-extrap subcommand ---
     re_parser = subparsers.add_parser(
@@ -219,7 +242,7 @@ def main(argv: list[str] | None = None) -> int:
                 f"dark={config.columns['dark'].kind}/{config.columns['dark'].amplitude_or_intensity}  "
                 f"triggered={config.columns['triggered'].kind}/{config.columns['triggered'].amplitude_or_intensity}"
             )
-            result = run(config)
+            result = run(config, fresh=args.fresh)
             rows = [result.as_row()]
             print(f"{result.condition}: {result.status}: chi={result.chi}, factor={result.extrapolation_factor}")
         else:
@@ -236,12 +259,28 @@ def main(argv: list[str] | None = None) -> int:
                           file=sys.stderr)
                     rows.append(_config_error_row(config_path, exc))
                     continue
-                result = run(config)
+                result = run(config, fresh=args.fresh)
                 rows.append(result.as_row())
                 print(f"{result.condition}: {result.status}: chi={result.chi}, factor={result.extrapolation_factor}")
 
         _write_summary(args.summary, rows)
         print(f"Wrote {args.summary}")
+        return 0
+
+    elif args.command == "truncate":
+        from .mtz_inspect import truncate_mtz
+
+        stats = truncate_mtz(
+            args.in_mtz,
+            args.out_mtz,
+            dmin=args.dmin,
+            dmax=args.dmax,
+            drop_unmeasured=not args.keep_unmeasured,
+        )
+        print(
+            f"Wrote {args.out_mtz}: kept {stats['kept']}/{stats['total']} reflections, "
+            f"{stats['dmax']}-{stats['dmin']} Å"
+        )
         return 0
 
     elif args.command == "refine-extrap":

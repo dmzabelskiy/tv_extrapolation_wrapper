@@ -179,7 +179,7 @@ def test_from_files_xfel_defaults():
     assert config.columns["triggered"].kind == "intensity"
     assert 1.0 < config.resolution_limit < 5.0
     assert config.output_dir == Path("results")
-    assert config.scaling_loss == "huber"
+    assert config.scaling_loss == "huber_safe"
     assert not config.finite_filter
     assert not config.rewrite_pdb_cell
     assert not config.phenix_refine_cell
@@ -284,3 +284,107 @@ def test_config_explicit_resolution_wins():
         output_dir=Path("results"),
     )
     assert config.resolution_limit == 2.58
+
+
+# ---------------------------------------------------------------------------
+# shell-completeness guard + truncate_mtz
+# ---------------------------------------------------------------------------
+
+
+def _write_footprint_mtz(path, spec, cell_a=50.0, hkl_max=25):
+    """Write a cubic P1 MTZ whose measured footprint follows `spec`:
+    a list of (d_lo, d_hi, value, sigma) — value may be NaN for padded rows."""
+    cell = gemmi.UnitCell(cell_a, cell_a, cell_a, 90, 90, 90)
+    rows = []
+    for h in range(-hkl_max, hkl_max + 1):
+        for k in range(-hkl_max, hkl_max + 1):
+            for l in range(0, hkl_max + 1):
+                s = h * h + k * k + l * l
+                if s == 0:
+                    continue
+                d = cell_a / math.sqrt(s)
+                for d_lo, d_hi, value, sigma in spec:
+                    if d_hi <= d < d_lo:
+                        rows.append((h, k, l, value, sigma))
+                        break
+    mtz = gemmi.Mtz(with_base=True)
+    mtz.spacegroup = gemmi.SpaceGroup("P 1")
+    mtz.set_cell_for_all(cell)
+    mtz.add_dataset("syn")
+    mtz.add_column("F", "F")
+    mtz.add_column("SIGF", "Q")
+    mtz.set_data(np.array(rows, dtype=float))
+    mtz.write_to_file(str(path))
+    return path
+
+
+def test_shell_guard_ignores_junk_beyond_dead_zone(tmp_path):
+    """Corrupt 'measured' values past a dead zone must not inflate the limit."""
+    path = _write_footprint_mtz(
+        tmp_path / "junk.mtz",
+        [
+            (60.0, 1.9, 10.0, 1.0),          # real data
+            (1.9, 1.5, float("nan"), 1.0),   # dead zone
+            (1.5, 1.3, 100.0, 0.01),         # junk with finite sigma > 0
+        ],
+    )
+    with pytest.warns(UserWarning, match="measured reflections beyond"):
+        cutoff = resolution_cutoff_by_measured_extent(path)
+    assert 1.85 <= cutoff <= 2.0
+
+
+def test_sparse_anisotropic_tail_keeps_extent(tmp_path):
+    """A monotonically sparse tail is legitimate data — extent is kept."""
+    rng_rows = []
+    cell = gemmi.UnitCell(50.0, 50.0, 50.0, 90, 90, 90)
+    for h in range(-25, 26):
+        for k in range(-25, 26):
+            for l in range(0, 26):
+                s = h * h + k * k + l * l
+                if s == 0:
+                    continue
+                d = 50.0 / math.sqrt(s)
+                if d >= 2.0:
+                    rng_rows.append((h, k, l, 10.0, 1.0))
+                elif d >= 1.7:
+                    # ~30% of the tail measured, rest padded
+                    value = 10.0 if (h + k + l) % 3 == 0 else float("nan")
+                    rng_rows.append((h, k, l, value, 1.0))
+    mtz = gemmi.Mtz(with_base=True)
+    mtz.spacegroup = gemmi.SpaceGroup("P 1")
+    mtz.set_cell_for_all(cell)
+    mtz.add_dataset("syn")
+    mtz.add_column("F", "F")
+    mtz.add_column("SIGF", "Q")
+    mtz.set_data(np.array(rng_rows, dtype=float))
+    path = tmp_path / "aniso.mtz"
+    mtz.write_to_file(str(path))
+
+    cutoff = resolution_cutoff_by_measured_extent(path)
+    assert 1.65 <= cutoff <= 1.75
+
+
+def test_fully_padded_file_keeps_extent(tmp_path):
+    """Complete free-R padding below the data limit must not trip the guard."""
+    path = _write_synthetic_mtz(
+        tmp_path / "padded.mtz", finite_dmin=2.5, pad_dmin=1.2, amplitude=True
+    )
+    assert resolution_cutoff_by_measured_extent(path) == 2.5
+
+
+def test_truncate_mtz_drops_unmeasured_and_cuts(tmp_path):
+    from tv_extrapolation.mtz_inspect import truncate_mtz
+
+    src = _write_synthetic_mtz(
+        tmp_path / "in.mtz", finite_dmin=2.0, pad_dmin=1.2, amplitude=True
+    )
+    out = tmp_path / "out.mtz"
+    stats = truncate_mtz(src, out, dmin=2.5)
+    m = gemmi.read_mtz_file(str(out))
+    arr = np.array(m, copy=False)
+    assert stats["kept"] == m.nreflections
+    assert not np.isnan(arr).any()
+    assert m.resolution_high() >= 2.5
+
+    stats_keep = truncate_mtz(src, tmp_path / "keep.mtz", drop_unmeasured=False)
+    assert stats_keep["kept"] > stats["kept"]
