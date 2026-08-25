@@ -10,21 +10,26 @@ via Phenix refinement.
 ```bash
 conda activate tv-extrapolation
 
-# Run all datasets in one command
-tv-extrapolate run configs/datasets/ --summary results/summary.csv
-
-# Run a single family
-tv-extrapolate run configs/datasets/olpvr1_esrf/
+# Run the three bundled example datasets (data ships in examples/init/)
+tv-extrapolate run examples/configs/ --summary examples/results/summary.csv
 
 # Run a single dataset
-tv-extrapolate run configs/datasets/olpvr1_esrf/trapping_1.yaml
+tv-extrapolate run examples/configs/trapping_1.yaml
 
 # Direct mode: no config file needed
-tv-extrapolate run data/olpvr1_esrf/trapping_1/ground.mtz \
-                   data/olpvr1_esrf/trapping_1/6_CD364A_473nm_RT_5sec_5mWt.mtz \
-                   data/olpvr1_esrf/trapping_1/olpvr1_high_res_refine_72.pdb \
-                   --name trapping_1 --output results/olpvr1_esrf/trapping_1 \
+tv-extrapolate run examples/init/trapping_1/ground.mtz \
+                   examples/init/trapping_1/6_CD364A_473nm_RT_5sec_5mWt.mtz \
+                   examples/init/trapping_1/olpvr1_high_res_refine_72.pdb \
+                   --name trapping_1 --output examples/results/trapping_1 \
                    --scaling-loss huber_safe
+```
+
+Project datasets follow the same pattern with configs under `configs/datasets/<family>/`
+and data under `data/<family>/<dataset>/` (both private, not in the public repo):
+
+```bash
+tv-extrapolate run configs/datasets/ --summary results/summary.csv   # everything
+tv-extrapolate run configs/datasets/olpvr1_esrf/                     # one family
 ```
 
 ## Installation
@@ -36,7 +41,9 @@ conda activate tv-extrapolation
 # xtr_estimator is git-only and must be installed WITHOUT its pinned deps
 # (they conflict with this env). meteor (meteor-maps) and everything else
 # are already handled by environment.yml above.
-pip install --no-deps git+https://github.com/cvazz/xtr-estimator.git@main
+# Pinned to the commit this wrapper was validated against — pipeline.py
+# monkeypatches xtr_estimator internals, so upstream main may break it.
+pip install --no-deps "git+https://github.com/cvazz/xtr-estimator.git@a6a29c06f48d34c1ce5675f36612f28b012b5c87"
 
 pip install -e .
 ```
@@ -57,11 +64,14 @@ tv-extrapolate run FILE_OR_DIR [FILE_OR_DIR ...]
                    [--summary PATH]    # output CSV (default: results/summary.csv)
 ```
 
-**YAML mode:** pass one or more `*.yaml` config files or directories containing them (searched recursively).
+**YAML mode:** pass one or more `*.yaml` config files or directories containing them (searched
+recursively; `legacy/` subtrees and pipeline-emitted `executed_config.yaml` files are skipped).
+A config that fails to load is recorded as an `error` row in the summary and the batch continues.
 **Direct mode:** pass exactly `dark.mtz triggered.mtz structure.pdb` — one dataset, no config file.
 
 Direct-mode options: `--name`, `--resolution Å`, `--output DIR`,
-`--scaling-loss {huber,linear,huber_safe}`, `--finite-filter`, `--rewrite-pdb-cell`, `--phenix-refine-cell`.
+`--scaling-loss {huber,linear,huber_safe}`, `--finite-filter`, `--rewrite-pdb-cell`,
+`--phenix-refine-cell`, `--phenix-bin PATH`.
 
 ### `tv-extrapolate refine-extrap`
 
@@ -70,7 +80,7 @@ Refines the dark model against the extrapolated MTZ to produce an excited-state 
 ```
 tv-extrapolate refine-extrap DARK_PDB EXTRAP_MTZ --out-dir DIR
     [--cif FILE] [--cpus N] [--phenix-bin PATH]
-    [--strategy individual_sites+individual_adp]
+    [--strategy individual_sites+individual_adp] [--cycles N]
 ```
 
 ### `tv-extrapolate scan`
@@ -80,8 +90,13 @@ Scans occupancy by building mixed dark/excited models and refining against the t
 ```
 tv-extrapolate scan GROUND_PDB EXTRAP_PDB TRIGGERED_MTZ --out-dir DIR
     [--x-grid X [X ...]] [--cif FILE] [--cpus N]
-    [--strategy individual_adp] [--cycles N]
+    [--mode {occupancy,coords}] [--strategy individual_adp] [--cycles N]
 ```
+
+`--mode occupancy` (default) builds two-conformer models with occupancies `1-x`/`x`;
+`--mode coords` linearly interpolates coordinates instead. `--cycles` defaults to 3 —
+1-cycle ADP refinement does not converge. The CLI's default `--x-grid` is
+`0.0 … 0.5`; the YAML `occupancy_scan.x_grid` default is `0.05 … 0.30`.
 
 ## Dataset Config Format
 
@@ -122,7 +137,10 @@ All available fields:
 | `finite_filter` | bool | false | Drop non-finite reflections before scaling |
 | `rewrite_pdb_cell` | bool | false | Copy MTZ cell into PDB CRYST1 |
 | `phenix_refine_cell` | bool | false | Run phenix rigid-body after cell rewrite |
+| `phenix_bin` | str | `phenix.refine` | phenix.refine binary used by `phenix_refine_cell` |
 | `occupancy_scan` | dict | null | If present, run occupancy scan after extrapolation |
+| `estimation` | dict | `{}` | Extra keys merged into xtr_estimator's `plot:` section (e.g. `solvent_density`) |
+| `masking` | dict | `{}` | Passed through as xtr_estimator's `masking:` section |
 
 `columns` block — specify `kind: amplitude` or `kind: intensity` to match your MTZ:
 
@@ -156,7 +174,8 @@ occupancy_scan:
 2. Create `configs/datasets/<family>/<name>.yaml` with the required fields
 3. Run: `tv-extrapolate run configs/datasets/<family>/<name>.yaml`
 
-Results land in `output_dir/<name>/`.
+Results land in `output_dir` when it already ends with the dataset name
+(the `configs/datasets/` convention), otherwise in `output_dir/<name>/`.
 
 ## Output Structure
 
@@ -182,7 +201,8 @@ If `occupancy_scan:` is configured, two more directories appear:
     └── occupancy_scan.png
 ```
 
-`results/summary.csv` accumulates results from each run.
+`results/summary.csv` accumulates across runs: rows are merged by condition name,
+so re-running a dataset replaces its row and leaves the others in place.
 
 ## Data Layout
 
@@ -198,6 +218,7 @@ examples/init/
 
 ## Known Issues
 
-- Phenix not in PATH: always pass `--phenix-bin /path/to/phenix-2.0/bin/phenix.refine`
+- Phenix not in PATH: pass `--phenix-bin /path/to/phenix-2.0/bin/phenix.refine` (or set
+  `phenix_bin:` / `occupancy_scan.phenix_bin:` in the dataset YAML)
 - Some datasets require `scaling_loss: huber_safe` when standard Huber fails (e.g. `trapping_1`, `trapping_2`)
 - Column names vary by dataset — verify MTZ headers match `columns:` in your config (`F`/`SIGF` vs `F-obs`/`SIGF-obs`)

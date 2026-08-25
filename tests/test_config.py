@@ -224,3 +224,43 @@ columns:
     p.write_text(yaml_text)
     cfg = DatasetConfig.from_yaml(p)
     assert cfg.occupancy_scan is None
+
+
+def _minimal_payload(**overrides) -> dict:
+    payload = {
+        "name": "demo",
+        "dark_mtz": "a.mtz",
+        "triggered_mtz": "b.mtz",
+        "pdb_dark": "c.pdb",
+        "resolution_limit": 2.0,
+        "columns": {
+            "dark": {"kind": "amplitude", "amplitude_or_intensity": "F", "sigma": "SIGF"},
+            "triggered": {"kind": "amplitude", "amplitude_or_intensity": "F", "sigma": "SIGF"},
+        },
+        "output_dir": "results/demo",
+    }
+    payload.update(overrides)
+    return payload
+
+
+def test_condition_dir_avoids_double_nesting_when_output_dir_ends_with_name(tmp_path):
+    cfg = DatasetConfig(**_minimal_payload(output_dir="results/family/demo"))
+    assert cfg.condition_dir == Path("results/family/demo")
+
+    payload = cfg.to_xtr_estimator_settings_dict()
+    assert payload["general"]["output_folder"] == "results/family"
+    assert payload["general"]["plot_folder"] == "results/family/demo"
+
+
+def test_condition_dir_appends_name_for_family_level_output_dir(tmp_path):
+    cfg = DatasetConfig(**_minimal_payload(output_dir="results/family"))
+    assert cfg.condition_dir == Path("results/family/demo")
+
+    payload = cfg.to_xtr_estimator_settings_dict()
+    assert payload["general"]["output_folder"] == "results/family"
+    assert payload["general"]["plot_folder"] == "results/family/demo"
+
+
+def test_phenix_bin_defaults_to_path_lookup():
+    cfg = DatasetConfig(**_minimal_payload())
+    assert cfg.phenix_bin == "phenix.refine"

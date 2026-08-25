@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 import subprocess
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 import matplotlib
@@ -53,7 +53,7 @@ def run_phenix_adp_refine(
     cpus: int = 2,
     phenix_bin: str = "phenix.refine",
     strategy: str = "individual_adp",
-    cycles: int = 1,
+    cycles: int = 3,
 ) -> tuple[Path, bool]:
     out_dir.mkdir(parents=True, exist_ok=True)
     log_path = out_dir / "phenix_refine.log"
@@ -94,7 +94,7 @@ def run_scan(
     phenix_bin: str = "phenix.refine",
     mode: str = "occupancy",
     strategy: str = "individual_adp",
-    cycles: int = 1,
+    cycles: int = 3,
 ) -> ScanResult:
     out_dir.mkdir(parents=True, exist_ok=True)
     header, gmap = read_pdb_into_resmap(ground_pdb)

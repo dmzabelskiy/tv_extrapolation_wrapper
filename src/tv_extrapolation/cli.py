@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import argparse
 import csv
+import sys
 from pathlib import Path
-from typing import Literal
 
 from .config import DatasetConfig
-from .pipeline import run
+from .pipeline import EstimationResult, run
 from .occupancy_scan import run_phenix_adp_refine, run_scan
 
 
@@ -14,10 +14,51 @@ def _collect_configs(paths: list[Path]) -> list[Path]:
     result = []
     for p in paths:
         if p.is_dir():
-            result.extend(sorted(p.rglob("*.yaml")))
+            for candidate in sorted(p.rglob("*.yaml")):
+                # skip legacy config trees and pipeline-emitted config dumps
+                if candidate.name == "executed_config.yaml" or "legacy" in candidate.parts:
+                    continue
+                result.append(candidate)
         else:
             result.append(p)
     return result
+
+
+def _config_error_row(config_path: Path, exc: Exception) -> dict:
+    return EstimationResult(
+        condition=config_path.stem,
+        status="error",
+        chi=None,
+        std=None,
+        extrapolation_factor=None,
+        dark_finite=0,
+        dark_nonfinite=0,
+        triggered_finite=0,
+        triggered_nonfinite=0,
+        diffmap_mtz="",
+        extrapolated_mtz="",
+        extrapolated_ccp4="",
+        error=f"config error: {type(exc).__name__}: {exc}",
+    ).as_row()
+
+
+def _write_summary(path: Path, new_rows: list[dict]) -> None:
+    """Merge new rows into the summary CSV, keyed by condition name."""
+    merged: dict[str, dict] = {}
+    if path.is_file():
+        with path.open(newline="") as handle:
+            for row in csv.DictReader(handle):
+                if row.get("condition"):
+                    merged[row["condition"]] = row
+    for row in new_rows:
+        merged[row["condition"]] = row
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="") as handle:
+        writer = csv.DictWriter(
+            handle, fieldnames=list(new_rows[0].keys()), restval="", extrasaction="ignore"
+        )
+        writer.writeheader()
+        writer.writerows(merged.values())
 
 
 def _is_direct_mode(paths: list[Path]) -> bool:
@@ -102,7 +143,13 @@ def main(argv: list[str] | None = None) -> int:
         default=False,
         dest="phenix_refine_cell",
         help="After rewriting the PDB cell, run phenix.refine rigid-body to "
-             "re-seat the model (implies --rewrite-pdb-cell; requires Phenix in PATH)",
+             "re-seat the model (implies --rewrite-pdb-cell)",
+    )
+    dm.add_argument(
+        "--phenix-bin",
+        default="phenix.refine",
+        dest="phenix_bin",
+        help="Path to phenix.refine (used by --phenix-refine-cell; default: phenix.refine from PATH)",
     )
 
     # --- refine-extrap subcommand ---
@@ -121,6 +168,8 @@ def main(argv: list[str] | None = None) -> int:
                            help="Path to phenix.refine binary")
     re_parser.add_argument("--strategy", default="individual_sites+individual_adp",
                            help="Phenix refinement strategy (default: individual_sites+individual_adp)")
+    re_parser.add_argument("--cycles", type=int, default=3,
+                           help="Number of phenix.refine macrocycles (default: 3)")
 
     # --- scan subcommand ---
     sc_parser = subparsers.add_parser(
@@ -142,8 +191,8 @@ def main(argv: list[str] | None = None) -> int:
     sc_parser.add_argument("--mode", choices=["occupancy", "coords"], default="occupancy")
     sc_parser.add_argument("--strategy", default="individual_adp",
                            help="Phenix refinement strategy (default: individual_adp)")
-    sc_parser.add_argument("--cycles", type=int, default=1,
-                           help="Number of phenix.refine macrocycles (default: 1)")
+    sc_parser.add_argument("--cycles", type=int, default=3,
+                           help="Number of phenix.refine macrocycles (default: 3)")
 
     args = parser.parse_args(argv)
 
@@ -163,6 +212,7 @@ def main(argv: list[str] | None = None) -> int:
                 finite_filter=args.finite_filter,
                 rewrite_pdb_cell=args.rewrite_pdb_cell or args.phenix_refine_cell,
                 phenix_refine_cell=args.phenix_refine_cell,
+                phenix_bin=args.phenix_bin,
             )
             print(
                 f"  name={config.name!r}  resolution={config.resolution_limit} Å  "
@@ -173,18 +223,24 @@ def main(argv: list[str] | None = None) -> int:
             rows = [result.as_row()]
             print(f"{result.condition}: {result.status}: chi={result.chi}, factor={result.extrapolation_factor}")
         else:
+            if not config_paths:
+                print(f"No dataset YAML files found in: {' '.join(map(str, args.configs))}",
+                      file=sys.stderr)
+                return 1
             rows = []
             for config_path in config_paths:
-                config = DatasetConfig.from_yaml(config_path)
+                try:
+                    config = DatasetConfig.from_yaml(config_path)
+                except Exception as exc:
+                    print(f"{config_path}: config error: {type(exc).__name__}: {exc}",
+                          file=sys.stderr)
+                    rows.append(_config_error_row(config_path, exc))
+                    continue
                 result = run(config)
                 rows.append(result.as_row())
                 print(f"{result.condition}: {result.status}: chi={result.chi}, factor={result.extrapolation_factor}")
 
-        args.summary.parent.mkdir(parents=True, exist_ok=True)
-        with args.summary.open("w", newline="") as handle:
-            writer = csv.DictWriter(handle, fieldnames=list(rows[0].keys()))
-            writer.writeheader()
-            writer.writerows(rows)
+        _write_summary(args.summary, rows)
         print(f"Wrote {args.summary}")
         return 0
 
@@ -195,6 +251,7 @@ def main(argv: list[str] | None = None) -> int:
             cpus=args.cpus,
             phenix_bin=args.phenix_bin,
             strategy=args.strategy,
+            cycles=args.cycles,
         )
         status = "ok" if ok else "FAILED"
         print(f"refine-extrap {status}: log at {log_path}")

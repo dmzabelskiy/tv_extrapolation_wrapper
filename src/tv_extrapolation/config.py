@@ -31,12 +31,25 @@ class DatasetConfig(BaseModel):
     columns: dict[str, ColumnSpec]
     rewrite_pdb_cell: bool = False
     phenix_refine_cell: bool = False
+    phenix_bin: str = "phenix.refine"
     finite_filter: bool = False
     scaling_loss: Literal["huber", "linear", "huber_safe"] = "huber"
     occupancy_scan: OccupancyScanConfig | None = None
     estimation: dict = Field(default_factory=dict)
     masking: dict = Field(default_factory=dict)
     output_dir: Path
+
+    @property
+    def condition_dir(self) -> Path:
+        """Directory that holds this dataset's outputs.
+
+        When output_dir already ends with the dataset name (the convention in
+        configs/datasets/), it is used as-is — otherwise <name> is appended.
+        This avoids the results/<name>/<name>/ double nesting.
+        """
+        if self.output_dir.name == self.name:
+            return self.output_dir
+        return self.output_dir / self.name
 
     @model_validator(mode="after")
     def _resolve_resolution(self) -> "DatasetConfig":
@@ -67,6 +80,7 @@ class DatasetConfig(BaseModel):
         finite_filter: bool = False,
         rewrite_pdb_cell: bool = False,
         phenix_refine_cell: bool = False,
+        phenix_bin: str = "phenix.refine",
     ) -> "DatasetConfig":
         """Build a config by auto-detecting columns and resolution from the MTZ files.
 
@@ -99,6 +113,7 @@ class DatasetConfig(BaseModel):
             finite_filter=finite_filter,
             rewrite_pdb_cell=rewrite_pdb_cell,
             phenix_refine_cell=phenix_refine_cell,
+            phenix_bin=phenix_bin,
         )
 
     def to_xtr_estimator_settings_dict(self) -> dict:
@@ -110,8 +125,10 @@ class DatasetConfig(BaseModel):
             "general": {
                 "name_machine": self.name,
                 "name_human": self.name,
-                "output_folder": str(self.output_dir),
-                "plot_folder": str(self.output_dir / self.name),
+                # xtr_estimator appends <name_machine>/ to output_folder for its
+                # own cache files, so hand it the parent of condition_dir.
+                "output_folder": str(self.condition_dir.parent),
+                "plot_folder": str(self.condition_dir),
                 "high_resolution_limit": self.resolution_limit,
                 "comparison_type": "triggered",
             },

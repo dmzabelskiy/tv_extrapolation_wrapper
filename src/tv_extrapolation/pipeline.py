@@ -132,15 +132,18 @@ def _rewrite_pdb_cell(pdb_path: Path, dark_mtz: Path, condition_dir: Path) -> Pa
     return out
 
 
-def _run_phenix_rigid_body(pdb_path: Path, dark_mtz: Path, condition_dir: Path) -> Path:
+def _run_phenix_rigid_body(
+    pdb_path: Path, dark_mtz: Path, condition_dir: Path, phenix_bin: str = "phenix.refine"
+) -> Path:
     """Run phenix.refine rigid-body to re-seat the model in the corrected cell."""
-    if not shutil.which("phenix.refine"):
+    if shutil.which(phenix_bin) is None and not Path(phenix_bin).is_file():
         raise RuntimeError(
-            "phenix.refine not found in PATH; cannot use --phenix-refine-cell"
+            f"{phenix_bin!r} not found; set phenix_bin in the dataset YAML or "
+            "pass --phenix-bin in direct mode"
         )
     prefix = condition_dir / "cell_refine"
     cmd = [
-        "phenix.refine",
+        phenix_bin,
         str(dark_mtz),
         str(pdb_path),
         "refinement.main.strategy=rigid_body",
@@ -330,17 +333,24 @@ class EstimationResult:
 
 
 def run(config: DatasetConfig) -> EstimationResult:
-    condition_dir = config.output_dir / config.name
+    condition_dir = config.condition_dir
     condition_dir.mkdir(parents=True, exist_ok=True)
 
     if config.rewrite_pdb_cell or config.phenix_refine_cell:
         corrected_pdb = _rewrite_pdb_cell(config.pdb_dark, config.dark_mtz, condition_dir)
         if config.phenix_refine_cell:
-            corrected_pdb = _run_phenix_rigid_body(corrected_pdb, config.dark_mtz, condition_dir)
+            corrected_pdb = _run_phenix_rigid_body(
+                corrected_pdb, config.dark_mtz, condition_dir, config.phenix_bin
+            )
         config = config.model_copy(update={"pdb_dark": corrected_pdb})
 
     settings = Settings(**config.to_xtr_estimator_settings_dict())
     resolved = dump_config(settings)
+    # dump_config writes executed_config.yaml to the family-level output_folder,
+    # where sibling datasets would overwrite it; keep it with this dataset's outputs.
+    dumped_config = condition_dir.parent / "executed_config.yaml"
+    if dumped_config.is_file():
+        dumped_config.replace(condition_dir / "executed_config.yaml")
 
     if config.scaling_loss == "linear":
         scaling_ctx = _linear_scaling_ctx()

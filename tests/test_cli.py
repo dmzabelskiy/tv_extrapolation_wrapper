@@ -103,3 +103,53 @@ def test_collect_configs_passes_files_through(tmp_path):
     f.write_text("name: x\n")
     result = _collect_configs([f])
     assert result == [f]
+
+
+def test_write_summary_merges_by_condition(tmp_path):
+    from tv_extrapolation.cli import _write_summary
+
+    summary = tmp_path / "summary.csv"
+    row_a = {"condition": "a", "status": "ok", "chi": "0.1"}
+    row_b = {"condition": "b", "status": "ok", "chi": "0.2"}
+    _write_summary(summary, [row_a, row_b])
+
+    row_b2 = {"condition": "b", "status": "ok", "chi": "0.3"}
+    row_c = {"condition": "c", "status": "error", "chi": ""}
+    _write_summary(summary, [row_b2, row_c])
+
+    with summary.open() as handle:
+        rows = {r["condition"]: r for r in csv.DictReader(handle)}
+    assert set(rows) == {"a", "b", "c"}
+    assert rows["a"]["chi"] == "0.1"
+    assert rows["b"]["chi"] == "0.3"
+
+
+def test_collect_configs_skips_legacy_and_executed_config(tmp_path):
+    (tmp_path / "good.yaml").write_text("name: good\n")
+    (tmp_path / "executed_config.yaml").write_text("general: {}\n")
+    legacy = tmp_path / "legacy"
+    legacy.mkdir()
+    (legacy / "old.yaml").write_text("name: old\n")
+    result = _collect_configs([tmp_path])
+    assert [p.name for p in result] == ["good.yaml"]
+
+
+def test_run_with_no_configs_errors(tmp_path, capsys):
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    exit_code = main(["run", str(empty), "--summary", str(tmp_path / "s.csv")])
+    assert exit_code == 1
+    assert "No dataset YAML files" in capsys.readouterr().err
+
+
+def test_run_bad_config_records_error_row(tmp_path):
+    bad = tmp_path / "bad.yaml"
+    bad.write_text("name: bad\n")  # missing required fields
+    summary = tmp_path / "summary.csv"
+    exit_code = main(["run", str(bad), "--summary", str(summary)])
+    assert exit_code == 0
+    with summary.open() as handle:
+        rows = list(csv.DictReader(handle))
+    assert rows[0]["condition"] == "bad"
+    assert rows[0]["status"] == "error"
+    assert "config error" in rows[0]["error"]

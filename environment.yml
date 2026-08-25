@@ -10,8 +10,11 @@ dependencies:
   - pip:
       # meteor imports as `meteor`; its PyPI distribution name is meteor-maps.
       - meteor-maps==0.4.2
+      # pydantic-settings and typer are runtime deps of xtr_estimator, which is
+      # installed with --no-deps (see README) — do not remove them.
       - pydantic-settings
       - typer
+      # dev conveniences, not needed by the pipeline itself
       - pyqt6
       - jupyterlab
       - gemmi
