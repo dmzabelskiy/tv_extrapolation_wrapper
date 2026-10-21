@@ -37,6 +37,12 @@ class DatasetConfig(BaseModel):
     # shrinks mid-optimization — which is exactly when plain huber crashes —
     # so it is the safe default.
     scaling_loss: Literal["huber", "linear", "huber_safe"] = "huber_safe"
+    # MTZ whose R-free flags the phenix-ready extrapolated MTZ inherits
+    # (default: dark_mtz).
+    rfree_mtz: Path | None = None
+    # TV weights scanned at each it-TV cycle; None (default) optimizes the
+    # weight by golden-section search at every cycle, as in the validated runs.
+    it_tv_weights: list[float] | None = None
     occupancy_scan: OccupancyScanConfig | None = None
     estimation: dict = Field(default_factory=dict)
     masking: dict = Field(default_factory=dict)

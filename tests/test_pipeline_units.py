@@ -187,3 +187,118 @@ def test_linear_ctx_swaps_and_restores_scale_maps():
     with _linear_scaling_ctx():
         assert processing.scale_maps is not original
     assert processing.scale_maps is original
+
+
+# --- phenix-ready R-free flags ----------------------------------------------
+
+
+def _write_mtz(path, hkls, columns):
+    import gemmi
+    import reciprocalspaceship as rs
+
+    ds = rs.DataSet(
+        {"H": [h for h, _, _ in hkls], "K": [k for _, k, _ in hkls], "L": [l for _, _, l in hkls]},
+        cell=gemmi.UnitCell(83.4, 83.4, 90.2, 90, 90, 120),
+        spacegroup=gemmi.SpaceGroup("P 32 2 1"),
+    ).astype({"H": "HKL", "K": "HKL", "L": "HKL"}).set_index(["H", "K", "L"])
+    for name, (values, dtype) in columns.items():
+        ds[name] = rs.DataSeries(values, index=ds.index, dtype=dtype)
+    ds.write_mtz(str(path))
+
+
+_HKLS = [(1, 0, 1), (2, 0, 1), (3, 0, 1), (1, 1, 1), (2, 1, 1), (3, 1, 2)]
+
+
+def _extrapolated(tmp_path):
+    import reciprocalspaceship as rs
+
+    path = tmp_path / "extrap.mtz"
+    n = len(_HKLS)
+    _write_mtz(path, _HKLS, {
+        "F": (np.linspace(10, 20, n), rs.StructureFactorAmplitudeDtype()),
+        "PHI": (np.linspace(0, 90, n), rs.PhaseDtype()),
+        "SIGF": (np.ones(n), rs.StandardDeviationDtype()),
+    })
+    return path
+
+
+def _read_flags(path):
+    import reciprocalspaceship as rs
+
+    ds = rs.read_mtz(str(path)).hkl_to_asu()
+    return {tuple(int(v) for v in idx): int(f) for idx, f in ds["FreeR_flag"].items()}
+
+
+def test_phenix_ready_carries_phenix_style_dark_flags(tmp_path):
+    import reciprocalspaceship as rs
+
+    dark = tmp_path / "dark.mtz"
+    flags = [0, 1, 0, 0, 1, 0]  # phenix convention: 1 = test set
+    _write_mtz(dark, _HKLS, {"R-free-flags": (flags, rs.MTZIntDtype())})
+
+    out = pipeline._make_phenix_ready(_extrapolated(tmp_path), "unit", tmp_path, dark)
+
+    assert _read_flags(out) == dict(zip(_HKLS, flags))
+
+
+def test_phenix_ready_converts_ccp4_style_dark_flags(tmp_path):
+    import reciprocalspaceship as rs
+
+    dark = tmp_path / "dark.mtz"
+    flags = [0, 3, 7, 0, 12, 19]  # CCP4 convention: 0 = test set
+    _write_mtz(dark, _HKLS, {"FreeR_flag": (flags, rs.MTZIntDtype())})
+
+    out = pipeline._make_phenix_ready(_extrapolated(tmp_path), "unit", tmp_path, dark)
+
+    assert _read_flags(out) == {hkl: int(f == 0) for hkl, f in zip(_HKLS, flags)}
+
+
+# --- it-TV difference map ----------------------------------------------------
+
+
+def _fake_it_tv(monkeypatch):
+    import xtr_estimator.processing as processing
+
+    calls = []
+
+    class FakeDenoiser:
+        def __init__(self, *, tv_weights_to_scan, max_iterations, verbose):
+            calls.append(("init", tv_weights_to_scan, max_iterations))
+
+        def __call__(self, *, derivative, native):
+            calls.append(("denoise", derivative, native))
+            return "denoised", []
+
+    def fake_kweight(*, mapset, kweight_mode, kweight_parameter):
+        calls.append(("kweight", mapset.native, mapset.derivative, kweight_mode))
+        return "kweighted-diffmap", None
+
+    monkeypatch.setattr(processing, "IterativeTvDenoiser", FakeDenoiser)
+    monkeypatch.setattr(processing, "kweight_diffmap_according_to_mode", fake_kweight)
+    return processing, calls
+
+
+def test_it_tv_override_denoises_then_kweights(monkeypatch):
+    processing, calls = _fake_it_tv(monkeypatch)
+    monkeypatch.setattr(pipeline, "_IT_TV_WEIGHTS_TO_SCAN", None)
+
+    # xtr_estimator's own grid default must not leak through
+    result = processing.calculate_diffmaps(
+        "dark", "triggered", "calc", diffmap_mode="it_tv",
+        parameters={"ittv_weights": [0.001, 0.01, 0.1]},
+    )
+
+    assert result == "kweighted-diffmap"
+    assert calls[0] == ("init", None, 20)  # None: per-cycle golden-section TV weight
+    assert calls[1] == ("denoise", "triggered", "dark")
+    assert calls[2][:3] == ("kweight", "dark", "denoised")
+    assert calls[2][3] == processing.WeightMode.optimize
+
+
+def test_it_tv_override_uses_configured_weight_grid(monkeypatch):
+    processing, calls = _fake_it_tv(monkeypatch)
+    monkeypatch.setattr(pipeline, "_IT_TV_WEIGHTS_TO_SCAN", [0.001, 0.01, 0.1])
+
+    processing.calculate_diffmaps("dark", "triggered", "calc", diffmap_mode="it_tv")
+
+    assert calls[0] == ("init", [0.001, 0.01, 0.1], 20)

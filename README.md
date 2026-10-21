@@ -43,7 +43,10 @@ conda activate tv-extrapolation
 # are already handled by environment.yml above.
 # Pinned to the commit this wrapper was validated against — pipeline.py
 # monkeypatches xtr_estimator internals, so upstream main may break it.
-pip install --no-deps "git+https://github.com/cvazz/xtr-estimator.git@a6a29c06f48d34c1ce5675f36612f28b012b5c87"
+# 403b16bc is the first commit supporting meteor-maps >= 0.5; its it_tv
+# difference map (no k-weighting, fixed TV-weight grid) is overridden in
+# pipeline.py to the behaviour validated with a6a29c06 (meteor 0.4.2).
+pip install --no-deps "git+https://github.com/cvazz/xtr-estimator.git@403b16bc"
 
 pip install -e .
 ```

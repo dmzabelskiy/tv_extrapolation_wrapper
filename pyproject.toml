@@ -17,7 +17,7 @@ dependencies = [
     "numpy",
     "gemmi",
     "reciprocalspaceship",
-    "meteor-maps>=0.4.2",
+    "meteor-maps>=0.5.1",
 ]
 
 [project.optional-dependencies]

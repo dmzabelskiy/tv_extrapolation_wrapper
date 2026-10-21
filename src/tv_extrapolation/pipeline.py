@@ -50,6 +50,74 @@ def _install_resolution_check() -> None:
 _install_resolution_check()
 
 
+# TV weights scanned at each it-TV cycle (set from DatasetConfig.it_tv_weights);
+# None = golden-section search for the max-negentropy weight at every cycle.
+_IT_TV_WEIGHTS_TO_SCAN: list[float] | None = None
+
+# Parameters chosen by the last it-TV difference-map calculation (k, TV weights per
+# iteration); written next to the outputs as <name>_it_tv_parameters.json.
+_LAST_IT_TV_PARAMETERS: dict = {}
+
+
+def _install_kweighted_it_tv() -> None:
+    """Restore the validated it-TV difference map.
+
+    xtr_estimator main (403b16bc) returns the it-TV-updated *derivative* from
+    calculate_diffmaps(diffmap_mode="it_tv"), no longer k-weights it, and scans
+    a fixed TV-weight grid (0.001, 0.01, 0.1) instead of optimizing the weight.
+    The validated pin (a6a29c06) denoised the triggered map with it-TV, choosing
+    each cycle's TV weight by golden-section search, and then computed a
+    k-weighted difference map with k at maximum negentropy; this reinstates
+    that behaviour. Other diffmap modes are passed through.
+    """
+    original = processing.calculate_diffmaps
+
+    def calculate_diffmaps_it_tv_kweighted(
+        map_dark,
+        map_triggered,
+        map_dark_comp,
+        meta_loc="",
+        diffmap_mode="kweighted",
+        parameters=None,
+    ):
+        if diffmap_mode != "it_tv":
+            return original(
+                map_dark, map_triggered, map_dark_comp, meta_loc, diffmap_mode, parameters
+            )
+        map_set = processing.DiffMapSet(
+            native=map_dark, derivative=map_triggered, calculated=map_dark_comp
+        )
+        denoiser = processing.IterativeTvDenoiser(
+            tv_weights_to_scan=_IT_TV_WEIGHTS_TO_SCAN,
+            max_iterations=20,
+            verbose=True,
+        )
+        map_set.derivative, it_tv_metadata = denoiser(
+            derivative=map_set.derivative, native=map_set.native
+        )
+        diffmap, k_metadata = processing.kweight_diffmap_according_to_mode(
+            mapset=map_set,
+            kweight_mode=processing.WeightMode.optimize,
+            kweight_parameter=None,
+        )
+        _LAST_IT_TV_PARAMETERS.clear()
+        _LAST_IT_TV_PARAMETERS.update(
+            {
+                "tv_weights_to_scan": _IT_TV_WEIGHTS_TO_SCAN,
+                "iterations": [m.model_dump() for m in it_tv_metadata],
+                "k_parameter": (
+                    k_metadata.optimal_parameter_value if k_metadata is not None else None
+                ),
+            }
+        )
+        return diffmap
+
+    processing.calculate_diffmaps = calculate_diffmaps_it_tv_kweighted
+
+
+_install_kweighted_it_tv()
+
+
 @contextlib.contextmanager
 def _linear_scaling_ctx():
     original = processing.scale_maps
@@ -165,13 +233,46 @@ def _run_phenix_rigid_body(
     return pdbs[-1]
 
 
-def _make_phenix_ready(extrapolated_mtz: Path, condition: str, condition_dir: Path) -> Path:
+def _dark_free_flags(ds: rs.DataSet, rfree_mtz: Path) -> np.ndarray | None:
+    """Test-set membership (1 = free) of ds's reflections, taken from rfree_mtz.
+
+    The extrapolated model is refined from the dark model, so its test set must
+    be the dark test set. Both conventions are read: CCP4 (0..19, 0 = free) and
+    Phenix (two values, the rarer one = free). Returns None if rfree_mtz holds
+    no integer column with "free" in its name.
+    """
+    dark = rs.read_mtz(str(rfree_mtz))
+    columns = [
+        c for c in dark.columns if "free" in c.lower() and dark.dtypes[c].mtztype == "I"
+    ]
+    if not columns:
+        return None
+    flags = dark[columns[0]].dropna().astype(int)
+    values, counts = np.unique(flags.to_numpy(), return_counts=True)
+    free_value = 0 if len(values) > 2 else values[np.argmin(counts)]
+    free = (flags == free_value).astype(np.int32)
+    free.index = dark.loc[flags.index].hkl_to_asu().index
+
+    asu_index = ds.copy().hkl_to_asu().index
+    matched = free.reindex(asu_index)
+    n_missing = int(matched.isna().sum())
+    if n_missing:
+        print(f"WARNING: {n_missing} extrapolated reflections have no dark R-free flag; set to work")
+    return matched.fillna(0).to_numpy(dtype=np.int32)
+
+
+def _make_phenix_ready(
+    extrapolated_mtz: Path, condition: str, condition_dir: Path, rfree_mtz: Path
+) -> Path:
     ds = rs.read_mtz(str(extrapolated_mtz))
-    rng = np.random.default_rng(_condition_seed(condition))
-    n = len(ds)
-    flags = np.zeros(n, dtype=np.int32)
-    n_free = max(1, int(round(n * 0.05)))
-    flags[rng.choice(n, size=n_free, replace=False)] = 1
+    flags = _dark_free_flags(ds, rfree_mtz)
+    if flags is None:
+        print(f"WARNING: no R-free column in {rfree_mtz}; assigning a random 5% test set")
+        rng = np.random.default_rng(_condition_seed(condition))
+        n = len(ds)
+        flags = np.zeros(n, dtype=np.int32)
+        n_free = max(1, int(round(n * 0.05)))
+        flags[rng.choice(n, size=n_free, replace=False)] = 1
 
     out = rs.DataSet(index=ds.index.copy())
     out.cell = ds.cell
@@ -434,6 +535,8 @@ def _run_once(config: DatasetConfig, fresh: bool = False) -> EstimationResult:
             )
         config = config.model_copy(update={"pdb_dark": corrected_pdb})
 
+    global _IT_TV_WEIGHTS_TO_SCAN
+    _IT_TV_WEIGHTS_TO_SCAN = config.it_tv_weights
     settings = Settings(**config.to_xtr_estimator_settings_dict())
     resolved = dump_config(settings)
     # dump_config writes executed_config.yaml to the family-level output_folder,
@@ -450,7 +553,9 @@ def _run_once(config: DatasetConfig, fresh: bool = False) -> EstimationResult:
         scaling_ctx = contextlib.nullcontext()
     with scaling_ctx:
         try:
-            unscaled_dark, unscaled_triggered = get_maps(resolved)
+            unscaled_dark, unscaled_triggered = get_maps(
+                resolved["input_files"], resolved["general"]["high_resolution_limit"]
+            )
             dark_finite, dark_nonfinite = _finite_stats(unscaled_dark)
             triggered_finite, triggered_nonfinite = _finite_stats(unscaled_triggered)
             if config.finite_filter:
@@ -534,7 +639,12 @@ def _run_once(config: DatasetConfig, fresh: bool = False) -> EstimationResult:
         map_sampling=resolved["general"]["map_sampling"]
     ).write_ccp4_map(str(ccp4_path))
 
-    phenix_path = _make_phenix_ready(mtz_path, config.name, condition_dir)
+    parameters_path = condition_dir / f"{config.name}_it_tv_parameters.json"
+    parameters_path.write_text(json.dumps(_LAST_IT_TV_PARAMETERS, indent=1))
+
+    phenix_path = _make_phenix_ready(
+        mtz_path, config.name, condition_dir, config.rfree_mtz or config.dark_mtz
+    )
 
     scan_best_x = scan_best_rfree = None
     scan_csv = scan_plot = ""
