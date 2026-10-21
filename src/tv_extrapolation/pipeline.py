@@ -221,7 +221,13 @@ def _run_occupancy_scan(
         print(f"WARNING: occupancy scan for {config.name}: refine-extrap failed")
         return None, None, "", ""
 
-    extrap_pdbs = sorted(refine_dir.glob("*_refine_*.pdb"))
+    # Current Phenix releases use the configured ``output.prefix`` directly
+    # (``ref_001.pdb``), while older releases may emit names containing
+    # ``_refine_``.  Accept both conventions so a successful refinement is
+    # not mistaken for a missing output model.
+    extrap_pdbs = sorted(refine_dir.glob("ref_*.pdb"))
+    if not extrap_pdbs:
+        extrap_pdbs = sorted(refine_dir.glob("*_refine_*.pdb"))
     if not extrap_pdbs:
         print(f"WARNING: occupancy scan for {config.name}: no refined PDB found in {refine_dir}")
         return None, None, "", ""

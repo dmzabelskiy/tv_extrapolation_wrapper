@@ -211,35 +211,35 @@ def test_from_files_overrides():
 # ---------------------------------------------------------------------------
 
 # Real data present in this checkout under data/ (not initial/).
-DATA_9_39_DARK = Path("data/olpvr1_esrf/9-39ms/ground.mtz")
-DATA_9_39_TRIG = Path("data/olpvr1_esrf/9-39ms/9-39.mtz")
+DATA_25MS_DARK = Path("data/olpvr1_esrf/25ms/ground.mtz")
+DATA_25MS_TRIG = Path("data/olpvr1_esrf/25ms/25ms.mtz")
 DATA_TEST_GROUND = Path("data/test/ground.mtz")
 
-have_9_39 = pytest.mark.skipif(
-    not (DATA_9_39_DARK.exists() and DATA_9_39_TRIG.exists()),
-    reason="9-39ms data not available",
+have_25ms = pytest.mark.skipif(
+    not (DATA_25MS_DARK.exists() and DATA_25MS_TRIG.exists()),
+    reason="25ms data not available",
 )
 have_test_ground = pytest.mark.skipif(
     not DATA_TEST_GROUND.exists(), reason="test ground.mtz not available"
 )
 
 
-@have_9_39
+@have_25ms
 def test_extent_real_triggered_not_padded():
-    """9-39.mtz HKL list extends to 1.13 Å (free-R set); Fobs to ~2.36 Å."""
-    ext = resolution_cutoff_by_measured_extent(DATA_9_39_TRIG)
+    """25ms.mtz HKL list extends to 1.13 Å (free-R set); Fobs to ~2.36 Å."""
+    ext = resolution_cutoff_by_measured_extent(DATA_25MS_TRIG)
     assert ext > 1.5  # not the 1.13 Å padded extent
     assert 2.25 < ext < 2.45
 
 
-@have_9_39
+@have_25ms
 def test_detect_resolution_limit_extent_coarser():
     """detect_resolution_limit returns the coarser of dark(~1.70)/triggered(~2.36)."""
-    limit = detect_resolution_limit(DATA_9_39_DARK, DATA_9_39_TRIG)
+    limit = detect_resolution_limit(DATA_25MS_DARK, DATA_25MS_TRIG)
     assert limit > 1.5  # regression: old code returned 1.13
     assert 2.25 < limit < 2.45
-    dark = resolution_cutoff_by_measured_extent(DATA_9_39_DARK)
-    trig = resolution_cutoff_by_measured_extent(DATA_9_39_TRIG)
+    dark = resolution_cutoff_by_measured_extent(DATA_25MS_DARK)
+    trig = resolution_cutoff_by_measured_extent(DATA_25MS_TRIG)
     assert limit == round(max(dark, trig), 2)
 
 
@@ -251,16 +251,16 @@ def test_extent_test_ground_not_padded():
     assert 1.6 < ext < 1.8
 
 
-@have_9_39
+@have_25ms
 def test_config_resolves_resolution_via_extent():
     """A config with no resolution_limit auto-detects via measured extent."""
-    dark_spec = detect_column_spec(DATA_9_39_DARK)
-    trig_spec = detect_column_spec(DATA_9_39_TRIG)
+    dark_spec = detect_column_spec(DATA_25MS_DARK)
+    trig_spec = detect_column_spec(DATA_25MS_TRIG)
     config = DatasetConfig(
-        name="9-39-auto",
-        dark_mtz=DATA_9_39_DARK,
-        triggered_mtz=DATA_9_39_TRIG,
-        pdb_dark=DATA_9_39_DARK,  # any path; not read during resolution resolve
+        name="25ms-auto",
+        dark_mtz=DATA_25MS_DARK,
+        triggered_mtz=DATA_25MS_TRIG,
+        pdb_dark=DATA_25MS_DARK,  # any path; not read during resolution resolve
         columns={"dark": dark_spec, "triggered": trig_spec},
         output_dir=Path("results"),
     )
@@ -269,16 +269,16 @@ def test_config_resolves_resolution_via_extent():
     assert 2.25 < config.resolution_limit < 2.45
 
 
-@have_9_39
+@have_25ms
 def test_config_explicit_resolution_wins():
     """An explicit resolution_limit is never overridden by the detector."""
-    dark_spec = detect_column_spec(DATA_9_39_DARK)
-    trig_spec = detect_column_spec(DATA_9_39_TRIG)
+    dark_spec = detect_column_spec(DATA_25MS_DARK)
+    trig_spec = detect_column_spec(DATA_25MS_TRIG)
     config = DatasetConfig(
-        name="9-39-explicit",
-        dark_mtz=DATA_9_39_DARK,
-        triggered_mtz=DATA_9_39_TRIG,
-        pdb_dark=DATA_9_39_DARK,
+        name="25ms-explicit",
+        dark_mtz=DATA_25MS_DARK,
+        triggered_mtz=DATA_25MS_TRIG,
+        pdb_dark=DATA_25MS_DARK,
         resolution_limit=2.58,
         columns={"dark": dark_spec, "triggered": trig_spec},
         output_dir=Path("results"),
