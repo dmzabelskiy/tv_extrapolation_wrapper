@@ -118,6 +118,83 @@ def _install_kweighted_it_tv() -> None:
 _install_kweighted_it_tv()
 
 
+def _install_autoshift_common_grid() -> None:
+    """Grid the model-calculated dark map on the observed map's grid in autoshift.
+
+    meteor grids each map with gemmi ``transform_f_phi_to_map(sample_rate=...)``, which sizes
+    the grid from that map's own resolution. In ``autoshift_rsmap_old`` the observed map
+    usually stops slightly short of the high-resolution limit, while the model map is
+    calculated to exactly the limit. The two grids can then differ by one FFT size (e.g. 432
+    vs 450), and indexing one with the other's mask raised IndexError (bundled trapping_1
+    example; MacR 7AVP -> 8RSS). Here the model map is transformed with ``exact_size`` equal
+    to the observed grid. Where the sizes already agree this is the same grid, so results
+    are unchanged. Otherwise the logic is a copy of xtr_estimator 403b16bc.
+    """
+
+    def _numpy_on_grid(map_coefficients: Map, shape: tuple[int, int, int]) -> np.ndarray:
+        mtz = map_coefficients.to_gemmi()
+        grid = mtz.transform_f_phi_to_map(
+            map_coefficients.amplitude_column_name,
+            map_coefficients.phase_column_name,
+            exact_size=list(shape),
+        )
+        return np.array(grid)
+
+    def autoshift_rsmap_common_grid(
+        map_in,
+        general_config,
+        map_dark_comp=None,
+        ignore_mask=False,
+        diagnostic_plots=False,
+    ):
+        map_sampling = general_config["map_sampling"]
+        pdbloc_dark = general_config["pdbloc_dark"]
+        if map_dark_comp is None:
+            struc = gemmi.read_pdb(pdbloc_dark)
+            map_dark_comp = processing.gemmi_structure_to_calculated_map(
+                struc, high_resolution_limit=general_config["high_resolution_limit"]
+            )
+        rsmap_np = map_in.to_3d_numpy_map(map_sampling=map_sampling)
+        map_dark_comp_np = map_dark_comp.to_3d_numpy_map(map_sampling=map_sampling)
+        if map_dark_comp_np.shape != rsmap_np.shape:
+            processing.logger.info(
+                f"autoshift: model map grid {map_dark_comp_np.shape} regridded to the "
+                f"observed map grid {rsmap_np.shape}"
+            )
+            map_dark_comp_np = _numpy_on_grid(map_dark_comp, rsmap_np.shape)
+
+        only_solvent = processing.support_from_masker(pdbloc_dark, map_dark_comp_np.shape)
+        ignore_mask = np.logical_or(only_solvent, ignore_mask)
+        processing.logger.info(f"ignore_mask voxel count: {np.sum(ignore_mask) / ignore_mask.size}")
+        include_mask = ~ignore_mask
+        if ignore_mask.all():
+            processing.logger.warning("All voxels are ignored in autoshift; no shift applied.")
+            return map_in, 0
+        shifts = map_dark_comp_np[include_mask] - rsmap_np[include_mask]
+        mean_shift = np.mean(shifts)
+        zero_freq = mean_shift * map_in.cell.volume
+        processing.logger.info(
+            f"Shift value {mean_shift:.5f} corresponds to zero frequency {zero_freq:.3f}"
+        )
+        map_in.loc[(0, 0, 0)] = {
+            map_in.amplitude_column_name: zero_freq,
+            map_in.phase_column_name: 0,
+            map_in.uncertainties_column_name: zero_freq / 10,
+        }
+        # Kept from the original: writing the map after the (0,0,0) insertion is not a no-op,
+        # it restores the HKL dtypes of the index that later meteor steps (to_gemmi) need.
+        temp_name = general_config["output_folder"] + "autoshifted_map.mtz"
+        map_in.write_mtz(temp_name)
+        if os.path.exists(temp_name):
+            os.remove(temp_name)
+        return map_in, zero_freq
+
+    processing.autoshift_rsmap_old = autoshift_rsmap_common_grid
+
+
+_install_autoshift_common_grid()
+
+
 @contextlib.contextmanager
 def _linear_scaling_ctx():
     original = processing.scale_maps
