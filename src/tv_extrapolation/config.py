@@ -44,6 +44,9 @@ class DatasetConfig(BaseModel):
     # weight by golden-section search at every cycle, as in the validated runs.
     it_tv_weights: list[float] | None = None
     occupancy_scan: OccupancyScanConfig | None = None
+    # Extra extrapolation factors N written besides N = 1/chi (e.g. [1.0] for crystals that are fully in one
+    # state). Each gives <name>_it_tv_extrapolated_fixed<N>.mtz and its phenix-ready MTZ.
+    extra_extrapolation_factors: list[float] = Field(default_factory=list)
     estimation: dict = Field(default_factory=dict)
     masking: dict = Field(default_factory=dict)
     output_dir: Path

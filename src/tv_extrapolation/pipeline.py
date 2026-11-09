@@ -542,6 +542,7 @@ class EstimationResult:
     scan_csv: str = ""
     scan_plot: str = ""
     error: str = ""
+    extra_phenix_ready_mtz: str = ""
 
     def as_row(self) -> dict:
         def _fmt(value: float | None) -> str:
@@ -566,6 +567,7 @@ class EstimationResult:
             "extrapolated_mtz": self.extrapolated_mtz,
             "extrapolated_ccp4": self.extrapolated_ccp4,
             "phenix_ready_mtz": self.phenix_ready_mtz,
+            "extra_phenix_ready_mtz": self.extra_phenix_ready_mtz,
             "scan_csv": self.scan_csv,
             "scan_plot": self.scan_plot,
             "error": self.error,
@@ -723,6 +725,28 @@ def _run_once(config: DatasetConfig, fresh: bool = False) -> EstimationResult:
         mtz_path, config.name, condition_dir, config.rfree_mtz or config.dark_mtz
     )
 
+    extra_ready = []
+    for extra in config.extra_extrapolation_factors:
+        raw_extra = Path(
+            save_extrapolated_map(
+                float(extra),
+                map_dark,
+                diffmap,
+                dark_map_file_loc=str(config.dark_mtz),
+                folder=condition_dir,
+                name_prefix=f"{config.name}_it_tv_extrapolated_fixed",
+            )
+        )
+        extra_mtz = condition_dir / f"{config.name}_it_tv_extrapolated_fixed{extra:.2f}.mtz"
+        if raw_extra != extra_mtz:
+            raw_extra.replace(extra_mtz)
+        extra_ready.append(
+            str(_make_phenix_ready(
+                extra_mtz, f"{config.name}_fixed{extra:.2f}", condition_dir,
+                config.rfree_mtz or config.dark_mtz,
+            ))
+        )
+
     scan_best_x = scan_best_rfree = None
     scan_csv = scan_plot = ""
     if config.occupancy_scan is not None:
@@ -748,6 +772,7 @@ def _run_once(config: DatasetConfig, fresh: bool = False) -> EstimationResult:
         extrapolated_ccp4=str(ccp4_path),
         scaling_loss=config.scaling_loss,
         phenix_ready_mtz=str(phenix_path),
+        extra_phenix_ready_mtz=";".join(extra_ready),
         scan_best_x=scan_best_x,
         scan_best_rfree=scan_best_rfree,
         scan_csv=scan_csv,
